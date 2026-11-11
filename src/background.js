@@ -54,10 +54,17 @@ ext.runtime.onInstalled.addListener(() => {
 });
 notifyWaTabs();
 
+let isPopupOpen = false;
 ext.runtime.onConnect.addListener((port) => {
   if (port.name !== "wps-popup") return;
+  isPopupOpen = true;
   notifyWaTabs({ wpsCmd: "popup", open: true });
-  port.onDisconnect.addListener(() => notifyWaTabs({ wpsCmd: "popup", open: false }));
+  // Saat popup aktif, pastikan kamera tidak dipause
+  ext.runtime.sendMessage({ type: "RESUME_CAMERA" }).catch(() => {});
+  port.onDisconnect.addListener(() => {
+    isPopupOpen = false;
+    notifyWaTabs({ wpsCmd: "popup", open: false });
+  });
 });
 
 ext.commands.onCommand.addListener(async (cmd) => {
@@ -120,7 +127,7 @@ const setupOffscreen = async () => {
   try {
     await chrome.offscreen.createDocument({
       url: OFFSCREEN_PATH,
-      reasons: ["USER_MEDIA", "WORKERS"],
+      reasons: ["USER_MEDIA"],
       justification: "Deteksi pengintip wajah di seluruh tab browser",
     });
   } catch (err) {
@@ -149,6 +156,8 @@ const syncOffscreenState = async () => {
       // Pada mode semua tab, offscreen document SELALU aktif sebagai sensor pusat tunggal
       await setupOffscreen();
       await injectAllTabs();
+      // Pastikan offscreen document menerima instruksi start
+      ext.runtime.sendMessage({ type: "START_CAMERA" }).catch(() => {});
     } else {
       await closeOffscreen();
       await ext.storage.local.set({ faceAlert: false, faceCount: 0 });
@@ -156,7 +165,7 @@ const syncOffscreenState = async () => {
   } catch {}
 };
 
-// Auto-mati saat jendela browser diminimize atau pengguna beralih ke aplikasi desktop lain (500ms debounce)
+// Auto-mati saat jendela browser diminimize atau pengguna beralih ke aplikasi desktop lain
 let focusDebounceTimer = null;
 if (typeof chrome !== "undefined" && chrome.windows) {
   chrome.windows.onFocusChanged.addListener((windowId) => {
@@ -165,16 +174,20 @@ if (typeof chrome !== "undefined" && chrome.windows) {
       focusDebounceTimer = null;
     }
 
-    const isBrowserActive = windowId !== chrome.windows.WINDOW_ID_NONE;
-    if (!isBrowserActive) {
-      // Tunggu 500ms untuk memastikan pengguna benar-benar beralih keluar browser
+    if (windowId === chrome.windows.WINDOW_ID_NONE) {
+      // Debounce 800ms untuk memastikan pengguna benar-benar beralih keluar browser
       focusDebounceTimer = setTimeout(async () => {
         focusDebounceTimer = null;
+        if (isPopupOpen) return;
         try {
-          ext.runtime.sendMessage({ type: "PAUSE_CAMERA" }).catch(() => {});
-          notifyWaTabs({ wpsCmd: "browserFocus", active: false }).catch(() => {});
+          const wins = await chrome.windows.getAll();
+          const hasFocus = wins.some((w) => w.focused);
+          if (!hasFocus) {
+            ext.runtime.sendMessage({ type: "PAUSE_CAMERA" }).catch(() => {});
+            notifyWaTabs({ wpsCmd: "browserFocus", active: false }).catch(() => {});
+          }
         } catch {}
-      }, 500);
+      }, 800);
     } else {
       // Kembali ke browser: resume kamera seketika tanpa delay
       try {
@@ -184,6 +197,15 @@ if (typeof chrome !== "undefined" && chrome.windows) {
     }
   });
 }
+
+// Saat user berganti tab aktif di Chrome, pastikan kamera aktif
+ext.tabs.onActivated.addListener(() => {
+  if (focusDebounceTimer) {
+    clearTimeout(focusDebounceTimer);
+    focusDebounceTimer = null;
+  }
+  ext.runtime.sendMessage({ type: "RESUME_CAMERA" }).catch(() => {});
+});
 
 ext.tabs.onCreated.addListener(() => syncOffscreenState());
 ext.tabs.onRemoved.addListener(() => setTimeout(syncOffscreenState, 500));

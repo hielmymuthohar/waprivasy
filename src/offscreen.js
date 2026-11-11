@@ -26,10 +26,11 @@ const initDetector = async () => {
   return detector;
 };
 
-const startCamera = async () => {
+const startCamera = async (force = false) => {
+  if (force) isPaused = false;
   if (stream || isPaused) return;
   try {
-    await initDetector();
+    // Dapatkan akses kamera terlebih dahulu agar lampu webcam menyala langsung
     const mediaStream = await navigator.mediaDevices.getUserMedia({
       video: { width: { ideal: 320 }, height: { ideal: 240 }, facingMode: "user" },
       audio: false,
@@ -39,9 +40,16 @@ const startCamera = async () => {
       return;
     }
     stream = mediaStream;
-    video.srcObject = stream;
-    await video.play();
+    if (video) {
+      video.muted = true;
+      video.playsInline = true;
+      video.srcObject = stream;
+      await video.play().catch(() => {});
+    }
     ext.storage.local.set({ extCameraBlocked: false }).catch(() => {});
+
+    // Inisialisasi detector MediaPipe secara paralel jika belum siap
+    await initDetector();
     startLoop();
   } catch (err) {
     console.error("[WPS Offscreen Cam Error]", err);
@@ -112,9 +120,9 @@ ext.runtime.onMessage.addListener((m) => {
   if (m.type === "PAUSE_CAMERA") {
     isPaused = true;
     stopCamera();
-  } else if (m.type === "RESUME_CAMERA") {
+  } else if (m.type === "RESUME_CAMERA" || m.type === "START_CAMERA") {
     isPaused = false;
-    startCamera();
+    startCamera(true);
   }
 });
 
@@ -123,7 +131,7 @@ ext.storage.onChanged.addListener((changes) => {
   if (changes.faceDetect || changes.faceConsent || changes.faceScope) {
     ext.storage.local.get(["faceDetect", "faceConsent", "faceScope"]).then((s) => {
       if (s.faceDetect && s.faceConsent && s.faceScope === "all") {
-        if (!isPaused) startCamera();
+        startCamera(true);
       } else {
         stopCamera();
       }
@@ -131,4 +139,4 @@ ext.storage.onChanged.addListener((changes) => {
   }
 });
 
-startCamera();
+startCamera(true);

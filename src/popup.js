@@ -336,7 +336,7 @@ const refreshWaChats = async () => {
 
 const requestExtensionCameraPermission = async () => {
   try {
-    const probe = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 } });
+    const probe = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
     probe.getTracks().forEach((t) => {
       try { t.stop(); t.enabled = false; } catch {}
     });
@@ -378,15 +378,23 @@ const renderFaceCardUI = (isOn, scope) => {
         ? "Deteksi AI aktif memantau pengintip di seluruh tab browser."
         : "Deteksi AI aktif memantau pengintip saat WhatsApp Web dibuka.";
     }
-    if (actionRow) {
-      actionRow.style.display = (isAll && state && state.extCameraBlocked) ? "block" : "none";
-    }
   } else {
     badge.className = "status-pill off";
     badge.textContent = "Mati";
     if (scopeBox) scopeBox.style.display = "none";
     if (desc) desc.textContent = "Deteksi AI lokal memantau pengintip di layar. Privasi 100% di memori, tanpa simpan atau kirim gambar.";
-    if (actionRow) actionRow.style.display = "none";
+  }
+
+  if (actionRow) {
+    actionRow.style.display = "block";
+    const btn = $("faceSetup");
+    if (btn) {
+      if (isAll && state && state.extCameraBlocked) {
+        btn.innerHTML = `<svg class="wps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>Beri Izin Kamera di Browser...</span>`;
+      } else {
+        btn.innerHTML = `<svg class="wps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg><span>Uji &amp; Atur Kamera di Browser...</span>`;
+      }
+    }
   }
 };
 

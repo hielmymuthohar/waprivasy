@@ -62,6 +62,43 @@
       flex-shrink: 0;
       margin-top: 2px;
     }
+    .preview-box {
+      display: none;
+      margin: 14px 0;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: #0b141a;
+      position: relative;
+    }
+    .preview-box video {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      display: block;
+      transform: scaleX(-1);
+    }
+    .preview-badge {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background: rgba(11, 20, 26, 0.85);
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 11.5px;
+      color: #25d366;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .preview-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #25d366;
+      box-shadow: 0 0 6px #25d366;
+    }
     .action-box {
       border-top: 1px solid var(--border);
       padding-top: 16px;
@@ -89,25 +126,33 @@
     <ul class="points">
       <li>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        <span><strong>100% Pemrosesan Lokal:</strong> Model AI dijalankan sepenuhnya di browser Anda. Tidak ada video atau gambar yang disimpan atau dikirim ke internet.</span>
+        <span><strong>100% Pemrosesan Lokal:</strong> Model AI dijalankan sepenuhnya di memori browser. Tidak ada video atau gambar yang disimpan atau dikirim ke internet.</span>
       </li>
       <li>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        <span><strong>Perlindungan Otomatis:</strong> Jika terdeteksi lebih dari 1 wajah di depan layar, seluruh obrolan WhatsApp Web atau tab browser langsung disamarkan (blur total).</span>
+        <span><strong>Perlindungan Multi-Tab:</strong> Melindungi privasi di seluruh tab browser. Jika terdeteksi lebih dari 1 wajah, halaman seketika disamarkan (blur total).</span>
       </li>
       <li>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        <span><strong>Kendali Penuh:</strong> Kamera otomatis mati saat Anda meminimalkan browser atau beralih ke aplikasi lain di luar browser.</span>
+        <span><strong>Kendali Penuh:</strong> Kamera otomatis tertidur saat Anda meminimalkan browser atau beralih ke aplikasi lain di luar browser.</span>
       </li>
     </ul>
+
+    <div class="preview-box" id="previewBox">
+      <video id="testVideo" autoplay playsinline muted></video>
+      <div class="preview-badge">
+        <span class="preview-dot"></span>
+        <span>Kamera Terhubung &amp; Berfungsi</span>
+      </div>
+    </div>
 
     <div class="action-box">
       <label class="custom-check" style="font-size: 13px;">
         <input type="checkbox" id="agree" checked>
-        <span>Saya mengerti dan menyetujui akses kamera lokal untuk deteksi wajah.</span>
+        <span>Saya menyetujui akses kamera lokal untuk perlindungan privasi.</span>
       </label>
       <button id="go" class="primary-btn" style="padding: 10px 18px; font-size: 13px; justify-content: center;">
-        Izinkan Kamera & Aktifkan
+        Izinkan Kamera &amp; Aktifkan
       </button>
       <div id="msg" class="note"></div>
     </div>
