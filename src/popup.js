@@ -68,7 +68,7 @@ const ensureTabInjected = async (tabId) => {
       target: { tabId },
       func: () => window.__wpsVersion || 0,
     });
-    if (!chk || !chk[0] || chk[0].result !== 9) {
+    if (!chk || !chk[0] || chk[0].result !== 10) {
       await ext.scripting.insertCSS({ target: { tabId }, files: ["content.css"] });
       await ext.scripting.executeScript({ target: { tabId }, files: ["pin.js", "content.js"] });
     }
@@ -89,6 +89,8 @@ const runInWaTabs = async (cmd) => {
         args: [cmd],
         func: (c) => {
           if (c === "sync" && typeof window.__wpsSync === "function") window.__wpsSync();
+          else if (c === "startCamera" && typeof window.__wpsStartCamera === "function") window.__wpsStartCamera();
+          else if (c === "stopCamera" && typeof window.__wpsStopCamera === "function") window.__wpsStopCamera();
           else if (c === "lock" && typeof window.__wpsLock === "function") window.__wpsLock();
           else if (c === "panic" && typeof window.__wpsPanic === "function") window.__wpsPanic();
           else if (c === "registerHello" && typeof window.__wpsRegisterHello === "function") window.__wpsRegisterHello();
@@ -358,9 +360,12 @@ ext.storage.local.get(DEFAULTS).then(async (s) => {
             state.faceConsent = true;
             payload.faceConsent = true;
           }
+          await ext.storage.local.set(payload);
+          await runInWaTabs(v ? "startCamera" : "stopCamera");
+        } else {
+          await ext.storage.local.set(payload);
+          await runInWaTabs("sync");
         }
-        await ext.storage.local.set(payload);
-        await runInWaTabs("sync");
       }
     };
     el.addEventListener("input", save);

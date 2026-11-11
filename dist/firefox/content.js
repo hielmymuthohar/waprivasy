@@ -510,23 +510,27 @@
   let camVideo = null;
   let frameTimer = null;
   let runnerReady = false;
+  let camReqId = 0;
 
   const startCameraStream = async () => {
-    if (camStream) return true;
     if (!s.faceDetect || !alive()) return false;
+    if (camStream) return true;
+    const curId = ++camReqId;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { width: { ideal: 320 }, height: { ideal: 240 }, facingMode: "user" },
         audio: false,
       });
-      if (!s.faceDetect || !alive()) {
-        stream.getTracks().forEach((t) => t.stop());
+      if (curId !== camReqId || !s.faceDetect || !alive()) {
+        stream.getTracks().forEach((t) => { try { t.stop(); t.enabled = false; } catch {} });
         return false;
       }
       camStream = stream;
+      window.__wpsCamStream = stream;
       camError = "";
       if (!camVideo) {
         camVideo = document.createElement("video");
+        camVideo.setAttribute("data-wps-cam", "1");
         camVideo.muted = true;
         camVideo.playsInline = true;
         camVideo.style.cssText = "position:fixed;width:320px;height:240px;top:-9999px;left:-9999px;opacity:0.01;pointer-events:none;";
@@ -553,17 +557,70 @@
   };
 
   const stopCameraStream = () => {
+    camReqId++; // Batalkan request getUserMedia yang masih berjalan
     if (frameTimer) { clearInterval(frameTimer); frameTimer = null; }
+
+    // 1. Matikan track pada camStream instance ini
     if (camStream) {
-      camStream.getTracks().forEach((t) => t.stop());
+      try {
+        camStream.getTracks().forEach((t) => {
+          try { t.stop(); t.enabled = false; } catch {}
+        });
+      } catch {}
       camStream = null;
     }
+
+    // 2. Matikan stream global jika ada
+    if (window.__wpsCamStream) {
+      try {
+        window.__wpsCamStream.getTracks().forEach((t) => {
+          try { t.stop(); t.enabled = false; } catch {}
+        });
+      } catch {}
+      window.__wpsCamStream = null;
+    }
+
+    // 3. Pause & hapus elemen video milik ekstensi
     if (camVideo) {
+      try { camVideo.pause(); } catch {}
+      if (camVideo.srcObject && camVideo.srcObject.getTracks) {
+        try { camVideo.srcObject.getTracks().forEach((t) => { try { t.stop(); t.enabled = false; } catch {} }); } catch {}
+      }
       camVideo.srcObject = null;
-      camVideo.remove();
+      try { camVideo.remove(); } catch {}
       camVideo = null;
     }
+
+    // 4. Bersihkan sisa video lama
+    document.querySelectorAll("video[data-wps-cam]").forEach((v) => {
+      try {
+        if (v.srcObject && v.srcObject.getTracks) {
+          v.srcObject.getTracks().forEach((t) => { try { t.stop(); t.enabled = false; } catch {} });
+        }
+        v.pause();
+        v.srcObject = null;
+        v.remove();
+      } catch {}
+    });
+
+    // 5. Hapus runner iframe
+    if (faceFrame) {
+      try { faceFrame.remove(); } catch {}
+      faceFrame = null;
+    }
+
+    runnerReady = false;
+    faceHits = 0;
+    faceClear = 0;
+    lastFaceCount = 0;
+    faceAlertActive = false;
+    camError = "";
+    setFlag("data-wps-face-alert", false);
+    render();
   };
+
+  window.addEventListener("beforeunload", stopCameraStream);
+  window.addEventListener("pagehide", stopCameraStream);
 
   const startFrameLoop = () => {
     if (frameTimer || !camStream || !runnerReady) return;
@@ -598,15 +655,7 @@
       startCameraStream();
     } else {
       stopCameraStream();
-      if (faceFrame) { faceFrame.remove(); faceFrame = null; }
-      runnerReady = false;
-      faceHits = faceClear = 0;
-      lastFaceCount = 0;
-      faceAlertActive = false;
-      camError = "";
-      setFlag("data-wps-face-alert", false);
     }
-    render();
   };
 
   const onMessage = (e) => {
@@ -700,8 +749,19 @@
   const onStorageChanged = () => load(false);
   const onRuntimeMessage = (m, _sender, sendResponse) => {
     if (!m || !m.wpsCmd) return;
-    if (m.wpsCmd === "ping") sendResponse({ ok: true, v: 9 });
+    if (m.wpsCmd === "ping") sendResponse({ ok: true, v: 10 });
     else if (m.wpsCmd === "getChats") sendResponse({ ok: true, chats: getVisibleChatNames() });
+    else if (m.wpsCmd === "startCamera") {
+      s.faceDetect = true;
+      s.faceConsent = true;
+      syncFace();
+      sendResponse({ ok: true });
+    }
+    else if (m.wpsCmd === "stopCamera") {
+      s.faceDetect = false;
+      stopCameraStream();
+      sendResponse({ ok: true });
+    }
     else if (m.wpsCmd === "lock") { lockNow(); sendResponse({ ok: true }); }
     else if (m.wpsCmd === "panic") { togglePanic(); sendResponse({ ok: true }); }
     else if (m.wpsCmd === "registerHello") { startRegisterHello(); sendResponse({ ok: true }); }
@@ -729,9 +789,11 @@
   };
 
   window.__wpsCleanup = cleanup;
-  window.__wpsVersion = 9;
+  window.__wpsVersion = 10;
   window.__wpsGetChats = getVisibleChatNames;
   window.__wpsSync = () => load(false);
+  window.__wpsStartCamera = () => { s.faceDetect = true; s.faceConsent = true; syncFace(); };
+  window.__wpsStopCamera = () => { s.faceDetect = false; stopCameraStream(); };
   window.__wpsLock = lockNow;
   window.__wpsPanic = togglePanic;
   window.__wpsRegisterHello = startRegisterHello;
