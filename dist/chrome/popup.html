@@ -106,10 +106,21 @@
   <label>Kunci otomatis saat idle (menit, 0 = mati)
     <input type="number" min="0" max="240" data-key="idleMinutes" class="num"></label>
 
-  <h2>Deteksi wajah (opsional)</h2>
-  <label><input type="checkbox" data-key="faceDetect" id="faceDetect"> Blur otomatis jika ada lebih dari satu wajah</label>
-  <button id="faceSetup" class="full-btn">Atur kamera &amp; persetujuan…</button>
-  <div class="note">Diproses lokal, tanpa merekam atau mengirim gambar. Kamera hanya aktif dengan persetujuan Anda.</div>
+  <!-- Kartu Deteksi Wajah (Anti-Ngintip) -->
+  <div class="sec-card" style="margin-top: 10px;">
+    <div class="card-head">
+      <span class="card-title">📷 Deteksi Wajah (Anti-Ngintip)</span>
+      <span id="faceBadge" class="status-pill off">Mati</span>
+    </div>
+    <label style="cursor: pointer; font-weight: 500;">
+      <input type="checkbox" data-key="faceDetect" id="faceDetect">
+      <span>Blur otomatis jika ada &gt; 1 wajah</span>
+    </label>
+    <div id="faceDesc" class="note">Deteksi AI lokal memantau pengintip di layar. Privasi 100% di memori, tanpa simpan atau kirim gambar.</div>
+    <div id="faceActionRow" style="display:none; margin-top: 6px;">
+      <button type="button" id="faceSetup" class="full-btn">Izinkan Kamera di Browser</button>
+    </div>
+  </div>
 
   <h2>Decoy mode (opsional)</h2>
   <label><input type="checkbox" data-key="decoyEnabled"> Aktifkan PIN kedua</label>

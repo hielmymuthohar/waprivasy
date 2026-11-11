@@ -441,26 +441,31 @@
     if (panic && !savedTitle) { savedTitle = document.title; document.title = "Spreadsheet tanpa judul"; }
     else if (!panic && savedTitle) { document.title = savedTitle; savedTitle = ""; }
     const cam = shadow.getElementById("cam");
-    const showCam = Boolean(faceFrame || camError || s.faceDetect);
+    const showCam = Boolean(s.faceDetect && (faceFrame || camError || camStream));
     cam.classList.toggle("on", showCam);
     cam.style.pointerEvents = camError ? "auto" : "none";
     cam.style.cursor = camError ? "pointer" : "default";
-    if (camError) {
-      cam.textContent = "⚠️ " + camError + " (Klik di sini untuk coba lagi)";
-      cam.style.color = "#ff8a80";
-      cam.onclick = () => startCameraStream();
-    } else if (faceAlertActive || lastFaceCount >= 2) {
-      cam.textContent = "⚠️ Terdeteksi " + lastFaceCount + " wajah (Seluruh obrolan disamarkan)";
-      cam.style.color = "#ffb74d";
-      cam.onclick = null;
-    } else if (camStream) {
-      cam.textContent = "📷 Deteksi wajah aktif (" + lastFaceCount + " wajah terdeteksi)";
-      cam.style.color = "#e9edef";
-      cam.onclick = null;
+    if (!s.faceDetect) {
+      cam.style.display = "none";
     } else {
-      cam.textContent = "📷 Memulai kamera...";
-      cam.style.color = "#8696a0";
-      cam.onclick = null;
+      cam.style.display = showCam ? "block" : "none";
+      if (camError) {
+        cam.textContent = "⚠️ " + camError + " (Klik untuk coba lagi)";
+        cam.style.color = "#ff8a80";
+        cam.onclick = () => startCameraStream();
+      } else if (faceAlertActive || lastFaceCount >= 2) {
+        cam.textContent = "⚠️ " + lastFaceCount + " wajah (Layar tersamar)";
+        cam.style.color = "#ffb74d";
+        cam.onclick = null;
+      } else if (camStream) {
+        cam.textContent = "📷 " + lastFaceCount + " wajah";
+        cam.style.color = "#e9edef";
+        cam.onclick = null;
+      } else {
+        cam.textContent = "📷 Memulai kamera...";
+        cam.style.color = "#8696a0";
+        cam.onclick = null;
+      }
     }
     if (locked && showPin) shadow.getElementById("pin").focus();
   };
@@ -508,11 +513,17 @@
 
   const startCameraStream = async () => {
     if (camStream) return true;
+    if (!s.faceDetect || !alive()) return false;
     try {
-      camStream = await navigator.mediaDevices.getUserMedia({
+      const stream = await navigator.mediaDevices.getUserMedia({
         video: { width: { ideal: 320 }, height: { ideal: 240 }, facingMode: "user" },
         audio: false,
       });
+      if (!s.faceDetect || !alive()) {
+        stream.getTracks().forEach((t) => t.stop());
+        return false;
+      }
+      camStream = stream;
       camError = "";
       if (!camVideo) {
         camVideo = document.createElement("video");
@@ -528,6 +539,11 @@
       return true;
     } catch (e) {
       camStream = null;
+      if (!s.faceDetect) {
+        camError = "";
+        render();
+        return false;
+      }
       camError = e.name === "NotAllowedError"
         ? "Izin kamera diblokir di browser. Klik ikon gembok/kamera di URL lalu 'Izinkan'."
         : ("Kamera error: " + (e.name || e.message || e));
@@ -684,7 +700,7 @@
   const onStorageChanged = () => load(false);
   const onRuntimeMessage = (m, _sender, sendResponse) => {
     if (!m || !m.wpsCmd) return;
-    if (m.wpsCmd === "ping") sendResponse({ ok: true, v: 8 });
+    if (m.wpsCmd === "ping") sendResponse({ ok: true, v: 9 });
     else if (m.wpsCmd === "getChats") sendResponse({ ok: true, chats: getVisibleChatNames() });
     else if (m.wpsCmd === "lock") { lockNow(); sendResponse({ ok: true }); }
     else if (m.wpsCmd === "panic") { togglePanic(); sendResponse({ ok: true }); }
@@ -713,7 +729,7 @@
   };
 
   window.__wpsCleanup = cleanup;
-  window.__wpsVersion = 8;
+  window.__wpsVersion = 9;
   window.__wpsGetChats = getVisibleChatNames;
   window.__wpsSync = () => load(false);
   window.__wpsLock = lockNow;

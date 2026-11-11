@@ -68,7 +68,7 @@ const ensureTabInjected = async (tabId) => {
       target: { tabId },
       func: () => window.__wpsVersion || 0,
     });
-    if (!chk || !chk[0] || chk[0].result !== 8) {
+    if (!chk || !chk[0] || chk[0].result !== 9) {
       await ext.scripting.insertCSS({ target: { tabId }, files: ["content.css"] });
       await ext.scripting.executeScript({ target: { tabId }, files: ["pin.js", "content.js"] });
     }
@@ -313,6 +313,24 @@ const refreshWaChats = async () => {
   renderChipsAndList();
 };
 
+const renderFaceCardUI = (isOn) => {
+  const badge = $("faceBadge");
+  const desc = $("faceDesc");
+  const actionRow = $("faceActionRow");
+  if (!badge) return;
+  if (isOn) {
+    badge.className = "status-pill on";
+    badge.textContent = "✓ Aktif";
+    if (desc) desc.textContent = "Aktif memantau pengintip di layar. Seluruh obrolan WhatsApp otomatis di-blur jika terdeteksi > 1 wajah.";
+    if (actionRow) actionRow.style.display = "none";
+  } else {
+    badge.className = "status-pill off";
+    badge.textContent = "Mati";
+    if (desc) desc.textContent = "Deteksi AI lokal memantau pengintip di layar. Privasi 100% di memori, tanpa simpan atau kirim gambar.";
+    if (actionRow) actionRow.style.display = "none";
+  }
+};
+
 ext.storage.local.get(DEFAULTS).then(async (s) => {
   state = s;
   if (Array.isArray(s.detectedChats) && s.detectedChats.length) {
@@ -321,7 +339,7 @@ ext.storage.local.get(DEFAULTS).then(async (s) => {
   currentProfile = s.profile && PROFILE_PRESETS[s.profile] ? s.profile : "custom";
   profileConfigs = ensureProfileConfigs(s);
   showAuthStatus(!!s.pinHash, !!s.webauthnCred, s.webauthnOrigin === "wa");
-  $("faceDetect").disabled = false;
+  renderFaceCardUI(Boolean(s.faceDetect));
   if (s.decoyHash) $("decoyStatus").textContent = "✓ PIN decoy tersimpan.";
 
   for (const el of document.querySelectorAll("[data-key]")) {
@@ -334,9 +352,12 @@ ext.storage.local.get(DEFAULTS).then(async (s) => {
       } else {
         state[k] = v;
         const payload = { [k]: v };
-        if (k === "faceDetect" && v) {
-          state.faceConsent = true;
-          payload.faceConsent = true;
+        if (k === "faceDetect") {
+          renderFaceCardUI(Boolean(v));
+          if (v) {
+            state.faceConsent = true;
+            payload.faceConsent = true;
+          }
         }
         await ext.storage.local.set(payload);
         await runInWaTabs("sync");
@@ -347,6 +368,7 @@ ext.storage.local.get(DEFAULTS).then(async (s) => {
   }
 
   renderControls();
+  renderFaceCardUI(Boolean(s.faceDetect));
   await syncActiveProfileToStorage();
   await refreshWaChats();
 });
