@@ -8,6 +8,7 @@ foreach ($t in "chrome", "firefox") {
 }
 $m = Get-Content src\manifest.json -Raw | ConvertFrom-Json
 $m.background = @{ scripts = @("background.js") }
+$m.permissions = @($m.permissions | Where-Object { $_ -ne "offscreen" })
 $m | Add-Member browser_specific_settings @{ gecko = @{
   id = "privacy-shield-wa@example.local"
   strict_min_version = "128.0"

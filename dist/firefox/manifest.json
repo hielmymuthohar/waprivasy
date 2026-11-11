@@ -8,7 +8,8 @@
                         "scripting"
                     ],
     "host_permissions":  [
-                             "https://web.whatsapp.com/*"
+                             "https://web.whatsapp.com/*",
+                             "\u003call_urls\u003e"
                          ],
     "icons":  {
                   "16":  "icons/icon16.png",
@@ -39,6 +40,18 @@
                                 "css":  [
                                             "content.css"
                                         ],
+                                "run_at":  "document_start"
+                            },
+                            {
+                                "matches":  [
+                                                "\u003call_urls\u003e"
+                                            ],
+                                "exclude_matches":  [
+                                                        "https://web.whatsapp.com/*"
+                                                    ],
+                                "js":  [
+                                           "global-blur.js"
+                                       ],
                                 "run_at":  "document_start"
                             },
                             {
@@ -74,13 +87,16 @@
                                          "resources":  [
                                                            "face.html",
                                                            "face.js",
+                                                           "offscreen.html",
+                                                           "offscreen.js",
+                                                           "global-blur.js",
                                                            "vendor/vision_bundle.mjs",
                                                            "vendor/blaze_face_short_range.tflite",
                                                            "vendor/wasm/vision_wasm_internal.js",
                                                            "vendor/wasm/vision_wasm_internal.wasm"
                                                        ],
                                          "matches":  [
-                                                         "https://web.whatsapp.com/*"
+                                                         "\u003call_urls\u003e"
                                                      ]
                                      }
                                  ],

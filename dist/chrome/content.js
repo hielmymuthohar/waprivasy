@@ -9,7 +9,8 @@
     pinHash: "", pinSalt: "", locked: false, panic: false,
     presentation: false, blurOnShare: true, sharing: false,
     webauthnCred: "", webauthnKey: "", webauthnAlg: -7, webauthnOrigin: "",
-    faceDetect: false, faceConsent: false, decoyEnabled: false, decoyHash: "", decoySalt: "",
+    faceDetect: false, faceConsent: false, faceScope: "wa", faceAlert: false, faceCount: 0,
+    decoyEnabled: false, decoyHash: "", decoySalt: "",
   };
   const root = document.documentElement;
   let s = DEFAULTS;
@@ -461,30 +462,46 @@
     if (panic && !savedTitle) { savedTitle = document.title; document.title = "Spreadsheet tanpa judul"; }
     else if (!panic && savedTitle) { document.title = savedTitle; savedTitle = ""; }
     const cam = shadow.getElementById("cam");
-    const showCam = Boolean(s.faceDetect && (faceFrame || camError || camStream));
-    cam.classList.toggle("on", showCam);
-    cam.style.pointerEvents = camError ? "auto" : "none";
-    cam.style.cursor = camError ? "pointer" : "default";
     if (!s.faceDetect) {
+      cam.classList.remove("on");
       cam.style.display = "none";
-    } else {
-      cam.style.display = showCam ? "flex" : "none";
-      if (camError) {
-        cam.innerHTML = ICONS.alert + " <span>" + camError + " (Klik untuk coba lagi)</span>";
-        cam.style.color = "#ff8a80";
-        cam.onclick = () => startCameraStream();
-      } else if (faceAlertActive || lastFaceCount >= 2) {
-        cam.innerHTML = ICONS.alert + " <span>" + lastFaceCount + " wajah (Layar tersamar)</span>";
+    } else if (s.faceScope === "all") {
+      cam.classList.add("on");
+      cam.style.display = "flex";
+      cam.style.pointerEvents = "none";
+      cam.style.cursor = "default";
+      if (s.faceAlert) {
+        cam.innerHTML = ICONS.alert + " <span>" + (s.faceCount || 2) + " wajah (Layar tersamar)</span>";
         cam.style.color = "#ffb74d";
-        cam.onclick = null;
-      } else if (camStream) {
-        cam.innerHTML = ICONS.camera + " <span>" + lastFaceCount + " wajah</span>";
-        cam.style.color = "#e9edef";
-        cam.onclick = null;
       } else {
-        cam.innerHTML = ICONS.camera + " <span>Memulai kamera...</span>";
+        cam.innerHTML = ICONS.camera + " <span>Dipantau di semua tab</span>";
         cam.style.color = "#8696a0";
-        cam.onclick = null;
+      }
+    } else {
+      const active = isTabActive();
+      const showCam = Boolean(active && (faceFrame || camError || camStream));
+      cam.classList.toggle("on", showCam);
+      cam.style.display = showCam ? "flex" : "none";
+      cam.style.pointerEvents = camError ? "auto" : "none";
+      cam.style.cursor = camError ? "pointer" : "default";
+      if (showCam) {
+        if (camError) {
+          cam.innerHTML = ICONS.alert + " <span>" + camError + " (Klik untuk coba lagi)</span>";
+          cam.style.color = "#ff8a80";
+          cam.onclick = () => startCameraStream();
+        } else if (faceAlertActive || lastFaceCount >= 2) {
+          cam.innerHTML = ICONS.alert + " <span>" + lastFaceCount + " wajah (Layar tersamar)</span>";
+          cam.style.color = "#ffb74d";
+          cam.onclick = null;
+        } else if (camStream) {
+          cam.innerHTML = ICONS.camera + " <span>" + lastFaceCount + " wajah</span>";
+          cam.style.color = "#e9edef";
+          cam.onclick = null;
+        } else {
+          cam.innerHTML = ICONS.camera + " <span>Memulai kamera...</span>";
+          cam.style.color = "#8696a0";
+          cam.onclick = null;
+        }
       }
     }
     if (locked && showPin) shadow.getElementById("pin").focus();
@@ -661,8 +678,46 @@
     }, 350);
   };
 
+  let camAwayTimer = null;
+  const isTabActive = () => !document.hidden && (document.hasFocus() || popupOpen);
+
+  const evaluateCameraPower = () => {
+    if (!alive()) return;
+    if (s.faceScope === "all") {
+      stopCameraStream();
+      setFlag("data-wps-face-alert", Boolean(s.faceDetect && s.faceAlert));
+      render();
+      return;
+    }
+    if (!s.faceDetect || !s.faceConsent) {
+      stopCameraStream();
+      return;
+    }
+    if (document.hidden) {
+      if (camAwayTimer) { clearTimeout(camAwayTimer); camAwayTimer = null; }
+      stopCameraStream();
+    } else if (!document.hasFocus() && !popupOpen) {
+      if (!camAwayTimer) {
+        camAwayTimer = setTimeout(() => {
+          camAwayTimer = null;
+          if (!isTabActive()) stopCameraStream();
+        }, 600);
+      }
+    } else {
+      if (camAwayTimer) { clearTimeout(camAwayTimer); camAwayTimer = null; }
+      if (!camStream) startCameraStream();
+    }
+  };
+
   const syncFace = () => {
-    const want = Boolean(s.faceDetect && s.faceConsent && alive());
+    if (!alive()) return;
+    if (s.faceScope === "all") {
+      stopCameraStream();
+      setFlag("data-wps-face-alert", Boolean(s.faceDetect && s.faceAlert));
+      render();
+      return;
+    }
+    const want = Boolean(s.faceDetect && s.faceConsent);
     if (want) {
       if (!faceFrame) {
         runnerReady = false;
@@ -674,7 +729,7 @@
         faceFrame.style.cssText = "position:fixed;width:1px;height:1px;border:0;opacity:0;pointer-events:none";
         root.appendChild(faceFrame);
       }
-      startCameraStream();
+      evaluateCameraPower();
     } else {
       stopCameraStream();
     }
@@ -736,6 +791,7 @@
   const away = () => {
     if (!alive()) return cleanup();
     setFlag("data-wps-away", !popupOpen && (document.hidden || !document.hasFocus()));
+    evaluateCameraPower();
   };
   window.addEventListener("blur", away);
   window.addEventListener("focus", away);
@@ -771,7 +827,7 @@
   const onStorageChanged = () => load(false);
   const onRuntimeMessage = (m, _sender, sendResponse) => {
     if (!m || !m.wpsCmd) return;
-    if (m.wpsCmd === "ping") sendResponse({ ok: true, v: 11 });
+    if (m.wpsCmd === "ping") sendResponse({ ok: true, v: 12 });
     else if (m.wpsCmd === "getChats") sendResponse({ ok: true, chats: getVisibleChatNames() });
     else if (m.wpsCmd === "startCamera") {
       s.faceDetect = true;
@@ -811,7 +867,7 @@
   };
 
   window.__wpsCleanup = cleanup;
-  window.__wpsVersion = 11;
+  window.__wpsVersion = 12;
   window.__wpsGetChats = getVisibleChatNames;
   window.__wpsSync = () => load(false);
   window.__wpsStartCamera = () => { s.faceDetect = true; s.faceConsent = true; syncFace(); };
@@ -822,6 +878,7 @@
   window.__wpsSetPopup = (open) => {
     popupOpen = Boolean(open);
     setTimeout(away, popupOpen ? 0 : 150);
+    evaluateCameraPower();
   };
 
   ext.runtime.onMessage.addListener(onRuntimeMessage);

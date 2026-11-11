@@ -39,7 +39,7 @@ const DEFAULTS = {
   locked: false, panic: false,
   blurOnShare: true, presentation: false,
   webauthnCred: "", webauthnKey: "", webauthnOrigin: "",
-  faceDetect: false, faceConsent: false, decoyEnabled: false, decoyHash: "", decoySalt: "",
+  faceDetect: false, faceConsent: false, faceScope: "wa", faceAlert: false, decoyEnabled: false, decoyHash: "", decoySalt: "",
   profile: "custom", profileConfigs: null, detectedChats: [],
 };
 
@@ -81,7 +81,7 @@ const ensureTabInjected = async (tabId) => {
       target: { tabId },
       func: () => window.__wpsVersion || 0,
     });
-    if (!chk || !chk[0] || chk[0].result !== 11) {
+    if (!chk || !chk[0] || chk[0].result !== 12) {
       await ext.scripting.insertCSS({ target: { tabId }, files: ["content.css"] });
       await ext.scripting.executeScript({ target: { tabId }, files: ["pin.js", "content.js"] });
     }
@@ -334,19 +334,39 @@ const refreshWaChats = async () => {
   renderChipsAndList();
 };
 
-const renderFaceCardUI = (isOn) => {
+const renderFaceCardUI = (isOn, scope) => {
   const badge = $("faceBadge");
   const desc = $("faceDesc");
   const actionRow = $("faceActionRow");
+  const scopeBox = $("faceScopeBox");
   if (!badge) return;
+  const currentScope = scope || (state && state.faceScope) || "wa";
+  const isAll = currentScope === "all";
+
   if (isOn) {
     badge.className = "status-pill on";
     badge.innerHTML = ICONS.check + " Aktif";
-    if (desc) desc.textContent = "Aktif memantau pengintip di layar. Seluruh obrolan WhatsApp otomatis di-blur jika terdeteksi > 1 wajah.";
+    if (scopeBox) scopeBox.style.display = "block";
+    const waBtn = $("faceScopeWa");
+    const allBtn = $("faceScopeAll");
+    const noteEl = $("faceScopeNote");
+    if (waBtn) waBtn.classList.toggle("active", !isAll);
+    if (allBtn) allBtn.classList.toggle("active", isAll);
+    if (noteEl) {
+      noteEl.textContent = isAll
+        ? "Melindungi privasi di seluruh tab browser. Jika terdeteksi orang mengintip (>1 wajah), tab yang aktif otomatis disamarkan (blur). Kamera otomatis mati saat browser tidak digunakan."
+        : "Kamera aktif hanya saat tab WhatsApp Web dibuka, dan otomatis mati saat Anda berpindah tab atau meminimalkan browser.";
+    }
+    if (desc) {
+      desc.textContent = isAll
+        ? "Deteksi AI aktif memantau pengintip di seluruh tab browser."
+        : "Deteksi AI aktif memantau pengintip saat WhatsApp Web dibuka.";
+    }
     if (actionRow) actionRow.style.display = "none";
   } else {
     badge.className = "status-pill off";
     badge.textContent = "Mati";
+    if (scopeBox) scopeBox.style.display = "none";
     if (desc) desc.textContent = "Deteksi AI lokal memantau pengintip di layar. Privasi 100% di memori, tanpa simpan atau kirim gambar.";
     if (actionRow) actionRow.style.display = "none";
   }
@@ -360,7 +380,7 @@ ext.storage.local.get(DEFAULTS).then(async (s) => {
   currentProfile = s.profile && PROFILE_PRESETS[s.profile] ? s.profile : "custom";
   profileConfigs = ensureProfileConfigs(s);
   showAuthStatus(!!s.pinHash, !!s.webauthnCred, s.webauthnOrigin === "wa");
-  renderFaceCardUI(Boolean(s.faceDetect));
+  renderFaceCardUI(Boolean(s.faceDetect), s.faceScope);
   if (s.decoyHash) $("decoyStatus").textContent = "PIN decoy tersimpan.";
 
   for (const el of document.querySelectorAll("[data-key]")) {
@@ -378,7 +398,7 @@ ext.storage.local.get(DEFAULTS).then(async (s) => {
         state[k] = v;
         const payload = { [k]: v };
         if (k === "faceDetect") {
-          renderFaceCardUI(Boolean(v));
+          renderFaceCardUI(Boolean(v), state.faceScope);
           if (v) {
             state.faceConsent = true;
             payload.faceConsent = true;
@@ -571,6 +591,20 @@ $("regKey").addEventListener("click", async () => {
 });
 
 $("faceSetup").addEventListener("click", () => ext.tabs.create({ url: ext.runtime.getURL("camera-setup.html") }));
+
+$("faceScopeWa").addEventListener("click", async () => {
+  state.faceScope = "wa";
+  await ext.storage.local.set({ faceScope: "wa" });
+  renderFaceCardUI(Boolean(state.faceDetect), "wa");
+  await runInWaTabs("sync");
+});
+
+$("faceScopeAll").addEventListener("click", async () => {
+  state.faceScope = "all";
+  await ext.storage.local.set({ faceScope: "all" });
+  renderFaceCardUI(Boolean(state.faceDetect), "all");
+  await runInWaTabs("sync");
+});
 
 const saveDecoyPin = async () => {
   const mainEntered = $("decoyAuthPin").value.trim();

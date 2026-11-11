@@ -3,8 +3,8 @@
   "name": "Privacy Shield for WA Web",
   "version": "2.0.0",
   "description": "Blur pesan, preview, media, nama, dan foto di WhatsApp Web. 100% lokal, tanpa koneksi keluar.",
-  "permissions": ["storage", "scripting"],
-  "host_permissions": ["https://web.whatsapp.com/*"],
+  "permissions": ["storage", "scripting", "offscreen"],
+  "host_permissions": ["https://web.whatsapp.com/*", "<all_urls>"],
   "icons": { "16": "icons/icon16.png", "48": "icons/icon48.png", "128": "icons/icon128.png" },
   "action": { "default_popup": "popup.html", "default_icon": { "16": "icons/icon16.png", "48": "icons/icon48.png" } },
   "background": { "service_worker": "background.js" },
@@ -12,6 +12,11 @@
     "matches": ["https://web.whatsapp.com/*"],
     "js": ["pin.js", "content.js"],
     "css": ["content.css"],
+    "run_at": "document_start"
+  }, {
+    "matches": ["<all_urls>"],
+    "exclude_matches": ["https://web.whatsapp.com/*"],
+    "js": ["global-blur.js"],
     "run_at": "document_start"
   }, {
     "matches": ["https://meet.google.com/*", "https://teams.microsoft.com/*", "https://teams.live.com/*", "https://*.zoom.us/*"],
@@ -29,12 +34,15 @@
     "resources": [
       "face.html",
       "face.js",
+      "offscreen.html",
+      "offscreen.js",
+      "global-blur.js",
       "vendor/vision_bundle.mjs",
       "vendor/blaze_face_short_range.tflite",
       "vendor/wasm/vision_wasm_internal.js",
       "vendor/wasm/vision_wasm_internal.wasm"
     ],
-    "matches": ["https://web.whatsapp.com/*"]
+    "matches": ["<all_urls>"]
   }],
   "commands": {
     "toggle-privacy": {
