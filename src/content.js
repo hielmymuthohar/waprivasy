@@ -541,7 +541,8 @@
   let camReqId = 0;
 
   const startCameraStream = async () => {
-    if (!s.faceDetect || !alive()) return false;
+    if (!s.faceDetect || !s.faceConsent || !alive()) return false;
+    ensureFaceFrame();
     if (camStream) return true;
     const curId = ++camReqId;
     try {
@@ -549,7 +550,7 @@
         video: { width: { ideal: 320 }, height: { ideal: 240 }, facingMode: "user" },
         audio: false,
       });
-      if (curId !== camReqId || !s.faceDetect || !alive()) {
+      if (curId !== camReqId || !s.faceDetect || !s.faceConsent || !alive()) {
         stream.getTracks().forEach((t) => { try { t.stop(); t.enabled = false; } catch {} });
         return false;
       }
@@ -588,7 +589,7 @@
     camReqId++; // Batalkan request getUserMedia yang masih berjalan
     if (frameTimer) { clearInterval(frameTimer); frameTimer = null; }
 
-    // 1. Matikan track pada camStream instance ini
+    // 1. Matikan track pada camStream instance ini (lampu hardware kamera MATI)
     if (camStream) {
       try {
         camStream.getTracks().forEach((t) => {
@@ -608,18 +609,16 @@
       window.__wpsCamStream = null;
     }
 
-    // 3. Pause & hapus elemen video milik ekstensi
+    // 3. Pause & lepaskan stream elemen video milik ekstensi
     if (camVideo) {
       try { camVideo.pause(); } catch {}
       if (camVideo.srcObject && camVideo.srcObject.getTracks) {
         try { camVideo.srcObject.getTracks().forEach((t) => { try { t.stop(); t.enabled = false; } catch {} }); } catch {}
       }
       camVideo.srcObject = null;
-      try { camVideo.remove(); } catch {}
-      camVideo = null;
     }
 
-    // 4. Bersihkan sisa video lama
+    // 4. Bersihkan video sisa jika ada
     document.querySelectorAll("video[data-wps-cam]").forEach((v) => {
       try {
         if (v.srcObject && v.srcObject.getTracks) {
@@ -627,16 +626,39 @@
         }
         v.pause();
         v.srcObject = null;
-        v.remove();
       } catch {}
     });
 
-    // 5. Hapus runner iframe
+    if (faceAlertActive) {
+      faceAlertActive = false;
+      setFlag("data-wps-face-alert", false);
+    }
+    if (s.faceScope === "all" && alive()) {
+      ext.storage.local.set({ faceAlert: false }).catch(() => {});
+    }
+
+    render();
+  };
+
+  const ensureFaceFrame = () => {
+    if (!alive() || !s.faceDetect || !s.faceConsent) return;
+    if (!faceFrame) {
+      runnerReady = false;
+      faceHits = faceClear = 0;
+      lastFaceCount = 0;
+      faceAlertActive = false;
+      faceFrame = document.createElement("iframe");
+      faceFrame.src = ext.runtime.getURL("face.html");
+      faceFrame.style.cssText = "position:fixed;width:1px;height:1px;border:0;opacity:0;pointer-events:none";
+      root.appendChild(faceFrame);
+    }
+  };
+
+  const removeFaceFrame = () => {
     if (faceFrame) {
       try { faceFrame.remove(); } catch {}
       faceFrame = null;
     }
-
     runnerReady = false;
     faceHits = 0;
     faceClear = 0;
@@ -644,9 +666,7 @@
     faceAlertActive = false;
     camError = "";
     setFlag("data-wps-face-alert", false);
-    stopKeepAlive();
     if (alive()) ext.storage.local.set({ faceAlert: false, faceCount: 0 }).catch(() => {});
-    render();
   };
 
   window.addEventListener("beforeunload", stopCameraStream);
@@ -700,7 +720,7 @@
     if (s.faceScope === "all") {
       return browserFocused;
     }
-    return !document.hidden && (document.hasFocus() || popupOpen);
+    return !document.hidden && (document.hasFocus() || popupOpen) && browserFocused;
   };
 
   const evaluateCameraPower = () => {
@@ -709,24 +729,22 @@
       if (camAwayTimer) { clearTimeout(camAwayTimer); camAwayTimer = null; }
       stopKeepAlive();
       stopCameraStream();
+      removeFaceFrame();
       return;
     }
+
+    ensureFaceFrame();
 
     if (s.faceScope === "all") {
       // MODE SEMUA TAB BROWSER:
       // Tab WhatsApp Web menjadi sensor kamera utama yang memantau pengintip di seluruh tab.
-      // Kamera tetap aktif selama jendela browser Chrome aktif (meski user pindah ke tab lain).
-      // Kamera HANYA tidur (mati) jika user minimize atau beralih ke aplikasi desktop lain (500ms debounce).
+      // Kamera tetap aktif selama jendela browser aktif (meski user pindah ke tab non-WA).
+      // Kamera HANYA tidur (mati) jika user minimize atau beralih ke aplikasi desktop luar.
+      // Jeda 500ms debounce sudah dieksekusi di background.js sebelum mengirim browserFocused: false.
       if (!browserFocused) {
-        if (!camAwayTimer) {
-          camAwayTimer = setTimeout(() => {
-            camAwayTimer = null;
-            if (!browserFocused) {
-              stopKeepAlive();
-              stopCameraStream();
-            }
-          }, 500);
-        }
+        if (camAwayTimer) { clearTimeout(camAwayTimer); camAwayTimer = null; }
+        stopKeepAlive();
+        stopCameraStream();
       } else {
         if (camAwayTimer) { clearTimeout(camAwayTimer); camAwayTimer = null; }
         keepAliveBackground();
@@ -736,19 +754,26 @@
       }
     } else {
       // MODE HANYA DI WA WEB (s.faceScope === "wa"):
-      // Kamera mati seketika jika tab WA Web pindah ke background ATAU jendela browser kehilangan fokus.
+      // Kamera aktif hanya saat tab WA Web aktif dan jendela browser fokus.
+      // Debounce 500ms berlaku seragam: saat pindah tab, minimize, atau keluar dari browser.
       stopKeepAlive();
-      if (document.hidden) {
-        if (camAwayTimer) { clearTimeout(camAwayTimer); camAwayTimer = null; }
-        stopCameraStream();
-      } else if (!document.hasFocus() && !popupOpen) {
-        if (!camAwayTimer) {
-          camAwayTimer = setTimeout(() => {
-            camAwayTimer = null;
-            if (document.hidden || (!document.hasFocus() && !popupOpen)) {
-              stopCameraStream();
-            }
-          }, 500);
+      const isWaActive = !document.hidden && (document.hasFocus() || popupOpen) && browserFocused;
+      if (!isWaActive) {
+        if (!browserFocused) {
+          // Browser tidak fokus / minimize: jeda 500ms sudah selesai di background.js, langsung matikan
+          if (camAwayTimer) { clearTimeout(camAwayTimer); camAwayTimer = null; }
+          stopCameraStream();
+        } else {
+          // Tab berganti di dalam browser: jalankan jeda debounce 500ms
+          if (!camAwayTimer) {
+            camAwayTimer = setTimeout(() => {
+              camAwayTimer = null;
+              const stillActive = !document.hidden && (document.hasFocus() || popupOpen) && browserFocused;
+              if (!stillActive) {
+                stopCameraStream();
+              }
+            }, 500);
+          }
         }
       } else {
         if (camAwayTimer) { clearTimeout(camAwayTimer); camAwayTimer = null; }
@@ -763,20 +788,13 @@
     if (!alive()) return;
     const want = Boolean(s.faceDetect && s.faceConsent);
     if (want) {
-      if (!faceFrame) {
-        runnerReady = false;
-        faceHits = faceClear = 0;
-        lastFaceCount = 0;
-        faceAlertActive = false;
-        faceFrame = document.createElement("iframe");
-        faceFrame.src = ext.runtime.getURL("face.html");
-        faceFrame.style.cssText = "position:fixed;width:1px;height:1px;border:0;opacity:0;pointer-events:none";
-        root.appendChild(faceFrame);
-      }
+      ensureFaceFrame();
       evaluateCameraPower();
     } else {
+      if (camAwayTimer) { clearTimeout(camAwayTimer); camAwayTimer = null; }
       stopKeepAlive();
       stopCameraStream();
+      removeFaceFrame();
     }
   };
 
@@ -859,6 +877,12 @@
   const load = async (initial) => {
     if (!alive()) return cleanup();
     s = await ext.storage.local.get(DEFAULTS);
+    try {
+      const stored = await ext.storage.local.get("browserFocused");
+      if (typeof stored.browserFocused === "boolean") {
+        browserFocused = stored.browserFocused;
+      }
+    } catch {}
     getCredId();
     if (initial && hasAuth() && s.lockOnLoad) {
       locked = true; panic = false;
@@ -876,11 +900,17 @@
   observer.observe(root, { childList: true, subtree: true, characterData: true });
 
   const onStorageChanged = (changes) => {
-    if (changes && (changes.faceAlert || changes.faceCount)) {
-      if (s.faceScope === "all") {
-        const isAlert = changes.faceAlert ? changes.faceAlert.newValue : s.faceAlert;
-        const count = changes.faceCount ? changes.faceCount.newValue : s.faceCount;
-        applyGlobalFaceAlert(Boolean(isAlert), count);
+    if (changes) {
+      if (changes.browserFocused !== undefined) {
+        browserFocused = Boolean(changes.browserFocused.newValue);
+        evaluateCameraPower();
+      }
+      if (changes.faceAlert || changes.faceCount) {
+        if (s.faceScope === "all") {
+          const isAlert = changes.faceAlert ? changes.faceAlert.newValue : s.faceAlert;
+          const count = changes.faceCount ? changes.faceCount.newValue : s.faceCount;
+          applyGlobalFaceAlert(Boolean(isAlert), count);
+        }
       }
     }
     load(false);
@@ -926,8 +956,10 @@
     document.removeEventListener("visibilitychange", away);
     try { ext.runtime.onMessage.removeListener(onRuntimeMessage); } catch {}
     try { ext.storage.onChanged.removeListener(onStorageChanged); } catch {}
+    if (camAwayTimer) { clearTimeout(camAwayTimer); camAwayTimer = null; }
+    stopKeepAlive();
     stopCameraStream();
-    if (faceFrame) { faceFrame.remove(); faceFrame = null; }
+    removeFaceFrame();
     if (host) { host.remove(); host = null; }
   };
 

@@ -414,7 +414,7 @@ ext.storage.local.get(DEFAULTS).then(async (s) => {
   }
 
   renderControls();
-  renderFaceCardUI(Boolean(s.faceDetect));
+  renderFaceCardUI(Boolean(s.faceDetect), s.faceScope);
   await syncActiveProfileToStorage();
   await refreshWaChats();
 });

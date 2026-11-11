@@ -51,8 +51,10 @@ const injectAllTabs = async () => {
 ext.runtime.onInstalled.addListener(() => {
   notifyWaTabs();
   injectAllTabs();
+  ext.storage.local.set({ browserFocused: true });
 });
 notifyWaTabs();
+ext.storage.local.set({ browserFocused: true });
 
 let isPopupOpen = false;
 ext.runtime.onConnect.addListener((port) => {
@@ -101,39 +103,60 @@ ext.runtime.onMessage.addListener((m, sender, sendResponse) => {
 ext.tabs.onRemoved.addListener((id) => setShare(id, false));
 ext.tabs.onUpdated.addListener((id, info) => { if (info.status === "loading") setShare(id, false); });
 
-// Auto-sleep kamera saat keluar dari browser Chrome (500ms debounce)
+// Auto-sleep kamera saat keluar dari browser atau jendela di-minimize (500ms debounce)
+const winApi = ext?.windows ?? globalThis.chrome?.windows;
+const NO_WINDOW = winApi?.WINDOW_ID_NONE ?? -1;
 let focusDebounceTimer = null;
-if (typeof chrome !== "undefined" && chrome.windows) {
-  chrome.windows.onFocusChanged.addListener((windowId) => {
-    if (focusDebounceTimer) {
-      clearTimeout(focusDebounceTimer);
-      focusDebounceTimer = null;
-    }
 
-    if (windowId === chrome.windows.WINDOW_ID_NONE) {
-      focusDebounceTimer = setTimeout(async () => {
-        focusDebounceTimer = null;
-        if (isPopupOpen) return;
-        try {
-          const wins = await chrome.windows.getAll();
-          const hasFocus = wins.some((w) => w.focused);
-          if (!hasFocus) {
-            notifyWaTabs({ wpsCmd: "browserFocus", active: false }).catch(() => {});
-          }
-        } catch {}
-      }, 500);
-    } else {
-      notifyWaTabs({ wpsCmd: "browserFocus", active: true }).catch(() => {});
-    }
-  });
-}
+const setBrowserFocus = (active) => {
+  ext.storage.local.set({ browserFocused: active });
+  notifyWaTabs({ wpsCmd: "browserFocus", active }).catch(() => {});
+};
 
-ext.tabs.onActivated.addListener(() => {
+const handleLostFocus = () => {
+  if (focusDebounceTimer) return;
+  focusDebounceTimer = setTimeout(() => {
+    focusDebounceTimer = null;
+    if (isPopupOpen) return;
+    setBrowserFocus(false);
+  }, 500);
+};
+
+const handleRegainedFocus = () => {
   if (focusDebounceTimer) {
     clearTimeout(focusDebounceTimer);
     focusDebounceTimer = null;
   }
-  notifyWaTabs({ wpsCmd: "browserFocus", active: true }).catch(() => {});
+  setBrowserFocus(true);
+};
+
+if (winApi) {
+  winApi.onFocusChanged.addListener((windowId) => {
+    if (windowId === NO_WINDOW) {
+      handleLostFocus();
+    } else {
+      handleRegainedFocus();
+    }
+  });
+
+  if (winApi.onBoundsChanged) {
+    winApi.onBoundsChanged.addListener((win) => {
+      if (win && win.state === "minimized") {
+        try {
+          winApi.getAll({ populate: false }, (wins) => {
+            const anyActive = (wins || []).some((w) => w.state !== "minimized" && w.focused);
+            if (!anyActive) {
+              handleLostFocus();
+            }
+          });
+        } catch {}
+      }
+    });
+  }
+}
+
+ext.tabs.onActivated.addListener(() => {
+  handleRegainedFocus();
 });
 
 ext.storage.onChanged.addListener((changes) => {
