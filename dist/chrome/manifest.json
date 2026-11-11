@@ -25,7 +25,17 @@
     "run_at": "document_start",
     "all_frames": true
   }],
-  "web_accessible_resources": [{ "resources": ["face.html"], "matches": ["https://web.whatsapp.com/*"] }],
+  "web_accessible_resources": [{
+    "resources": [
+      "face.html",
+      "face.js",
+      "vendor/vision_bundle.mjs",
+      "vendor/blaze_face_short_range.tflite",
+      "vendor/wasm/vision_wasm_internal.js",
+      "vendor/wasm/vision_wasm_internal.wasm"
+    ],
+    "matches": ["https://web.whatsapp.com/*"]
+  }],
   "commands": {
     "toggle-privacy": {
       "suggested_key": { "default": "Alt+Z" },

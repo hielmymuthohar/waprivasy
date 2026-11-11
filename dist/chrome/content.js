@@ -441,8 +441,17 @@
     if (panic && !savedTitle) { savedTitle = document.title; document.title = "Spreadsheet tanpa judul"; }
     else if (!panic && savedTitle) { document.title = savedTitle; savedTitle = ""; }
     const cam = shadow.getElementById("cam");
-    cam.classList.toggle("on", !!faceFrame);
-    cam.textContent = camError ? "Kamera gagal dimulai" : "Kamera aktif (deteksi wajah)";
+    cam.classList.toggle("on", Boolean(faceFrame || camError));
+    if (camError) {
+      cam.textContent = "⚠️ " + camError;
+      cam.style.color = "#ff8a80";
+    } else if (faceAlertActive || lastFaceCount >= 2) {
+      cam.textContent = "⚠️ Terdeteksi " + lastFaceCount + " wajah (Seluruh obrolan disamarkan)";
+      cam.style.color = "#ffb74d";
+    } else {
+      cam.textContent = "📷 Deteksi wajah aktif (" + lastFaceCount + " wajah terdeteksi)";
+      cam.style.color = "#e9edef";
+    }
     if (locked && showPin) shadow.getElementById("pin").focus();
   };
 
@@ -480,17 +489,24 @@
 
   /* ---------- Deteksi wajah (opt-in) ---------- */
   const EXT_ORIGIN = alive() ? new URL(ext.runtime.getURL("")).origin : "";
+  let lastFaceCount = 0;
+  let faceAlertActive = false;
+
   const syncFace = () => {
-    const want = s.faceDetect && s.faceConsent && alive();
+    const want = Boolean(s.faceDetect && s.faceConsent && alive());
     if (want && !faceFrame) {
       camError = false;
+      faceHits = faceClear = 0;
+      lastFaceCount = 0;
+      faceAlertActive = false;
       faceFrame = document.createElement("iframe");
       faceFrame.src = ext.runtime.getURL("face.html");
-      faceFrame.allow = "camera";
+      faceFrame.allow = "camera *; display-capture";
       faceFrame.style.cssText = "position:fixed;width:1px;height:1px;border:0;opacity:0;pointer-events:none";
       root.appendChild(faceFrame);
     } else if (!want && faceFrame) {
       faceFrame.remove(); faceFrame = null; faceHits = faceClear = 0;
+      lastFaceCount = 0; faceAlertActive = false; camError = false;
       setFlag("data-wps-face-alert", false);
     }
     render();
@@ -501,10 +517,37 @@
     if (faceFrame && e.source === faceFrame.contentWindow) {
       const v = e.data && e.data.wpsFace;
       if (typeof v === "number") {
-        if (v > 1) { faceHits++; faceClear = 0; } else { faceClear++; faceHits = 0; }
-        if (faceHits >= 2) setFlag("data-wps-face-alert", true);
-        if (faceClear >= 4) setFlag("data-wps-face-alert", false);
-      } else if (typeof v === "string" && v.startsWith("error")) { camError = true; render(); }
+        lastFaceCount = v;
+        camError = false;
+        if (v >= 2) {
+          faceHits++;
+          faceClear = 0;
+          if (!faceAlertActive) {
+            faceAlertActive = true;
+            setFlag("data-wps-face-alert", true);
+            toast("⚠️ Terdeteksi " + v + " wajah! Seluruh chat disamarkan otomatis.");
+          }
+        } else {
+          faceClear++;
+          faceHits = 0;
+          if (faceClear >= 3 && faceAlertActive) {
+            faceAlertActive = false;
+            setFlag("data-wps-face-alert", false);
+          }
+        }
+        render();
+      } else if (typeof v === "string") {
+        if (v === "ready") {
+          camError = false;
+          render();
+        } else if (v.startsWith("error")) {
+          const rawErr = v.replace(/^error:/, "");
+          camError = rawErr === "NotAllowedError"
+            ? "Izin kamera diblokir di browser. Klik ikon kamera/gembok di URL lalu 'Izinkan'."
+            : ("Kamera error: " + rawErr);
+          render();
+        }
+      }
     }
   };
   window.addEventListener("message", onMessage);
@@ -560,7 +603,7 @@
   const onStorageChanged = () => load(false);
   const onRuntimeMessage = (m, _sender, sendResponse) => {
     if (!m || !m.wpsCmd) return;
-    if (m.wpsCmd === "ping") sendResponse({ ok: true, v: 6 });
+    if (m.wpsCmd === "ping") sendResponse({ ok: true, v: 7 });
     else if (m.wpsCmd === "getChats") sendResponse({ ok: true, chats: getVisibleChatNames() });
     else if (m.wpsCmd === "lock") { lockNow(); sendResponse({ ok: true }); }
     else if (m.wpsCmd === "panic") { togglePanic(); sendResponse({ ok: true }); }
@@ -588,7 +631,7 @@
   };
 
   window.__wpsCleanup = cleanup;
-  window.__wpsVersion = 6;
+  window.__wpsVersion = 7;
   window.__wpsGetChats = getVisibleChatNames;
   window.__wpsSync = () => load(false);
   window.__wpsLock = lockNow;

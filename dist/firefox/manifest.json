@@ -72,7 +72,12 @@
     "web_accessible_resources":  [
                                      {
                                          "resources":  [
-                                                           "face.html"
+                                                           "face.html",
+                                                           "face.js",
+                                                           "vendor/vision_bundle.mjs",
+                                                           "vendor/blaze_face_short_range.tflite",
+                                                           "vendor/wasm/vision_wasm_internal.js",
+                                                           "vendor/wasm/vision_wasm_internal.wasm"
                                                        ],
                                          "matches":  [
                                                          "https://web.whatsapp.com/*"

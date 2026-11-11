@@ -58,7 +58,24 @@ html[data-wps-enabled][data-wps-presentation] #main header img {
 /* Terkunci atau panic: sembunyikan seluruh aplikasi. */
 html[data-wps-locked] #app { visibility: hidden !important; pointer-events: none !important; }
 
-/* Ada lebih dari satu wajah di depan kamera. */
-html[data-wps-enabled][data-wps-face-alert] #app { filter: blur(24px); }
+/* Ada lebih dari satu wajah di depan kamera (Anti-Ngintip / Shoulder Surfing).
+   Aktif apapun profil pengaturannya (Kustom, Kantor, Rumah, dll.),
+   mengabaikan hover-reveal, dan mem-blur seluruh chat & antarmuka WhatsApp. */
+html[data-wps-face-alert] #app {
+  filter: blur(26px) !important;
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+html[data-wps-face-alert] #pane-side,
+html[data-wps-face-alert] #main {
+  filter: blur(26px) !important;
+  pointer-events: none !important;
+}
+
+/* Matikan hover-reveal sepenuhnya saat alert wajah aktif */
+html[data-wps-face-alert] :hover {
+  filter: blur(26px) !important;
+}
 /* Mode decoy (PIN kedua): isi chat selalu tersamar, tanpa reveal. */
 html[data-wps-decoy] #pane-side, html[data-wps-decoy] #main { filter: blur(14px) !important; }
