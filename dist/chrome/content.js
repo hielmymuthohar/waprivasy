@@ -644,6 +644,8 @@
     faceAlertActive = false;
     camError = "";
     setFlag("data-wps-face-alert", false);
+    stopKeepAlive();
+    if (alive()) ext.storage.local.set({ faceAlert: false, faceCount: 0 }).catch(() => {});
     render();
   };
 
@@ -667,6 +669,30 @@
     }, 350);
   };
 
+  let bgAudioCtx = null;
+  const keepAliveBackground = () => {
+    try {
+      if (!bgAudioCtx) {
+        bgAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = bgAudioCtx.createOscillator();
+        const gain = bgAudioCtx.createGain();
+        gain.gain.value = 0.00001;
+        osc.connect(gain);
+        gain.connect(bgAudioCtx.destination);
+        osc.start();
+      }
+      if (bgAudioCtx.state === "suspended") {
+        bgAudioCtx.resume();
+      }
+    } catch {}
+  };
+  const stopKeepAlive = () => {
+    if (bgAudioCtx) {
+      try { bgAudioCtx.close(); } catch {}
+      bgAudioCtx = null;
+    }
+  };
+
   let camAwayTimer = null;
   let browserFocused = true;
 
@@ -677,58 +703,58 @@
     return !document.hidden && (document.hasFocus() || popupOpen);
   };
 
-  const applyGlobalFaceAlert = (alert, count) => {
-    if (alert) {
-      if (!faceAlertActive) {
-        faceAlertActive = true;
-        setFlag("data-wps-face-alert", true);
-        toast(ICONS.alert + " <span>Terdeteksi " + (count || 2) + " wajah! Seluruh chat disamarkan otomatis.</span>", true);
-        render();
-      }
-    } else {
-      if (faceAlertActive) {
-        faceAlertActive = false;
-        setFlag("data-wps-face-alert", false);
-        render();
-      }
-    }
-  };
-
   const evaluateCameraPower = () => {
     if (!alive()) return;
     if (!s.faceDetect || !s.faceConsent) {
       if (camAwayTimer) { clearTimeout(camAwayTimer); camAwayTimer = null; }
+      stopKeepAlive();
       stopCameraStream();
       return;
     }
 
     if (s.faceScope === "all") {
       // MODE SEMUA TAB BROWSER:
-      // Tab WhatsApp Web TIDAK mengambil kontrol webcam.
-      // Sensor kamera dijalankan oleh extension offscreen runner terpusat.
-      if (camAwayTimer) { clearTimeout(camAwayTimer); camAwayTimer = null; }
-      stopCameraStream();
-      return;
-    }
-
-    // MODE HANYA DI WA WEB (s.faceScope === "wa"):
-    // Kamera mati seketika jika tab WA Web pindah ke background ATAU jendela browser kehilangan fokus.
-    if (document.hidden) {
-      if (camAwayTimer) { clearTimeout(camAwayTimer); camAwayTimer = null; }
-      stopCameraStream();
-    } else if (!document.hasFocus() && !popupOpen) {
-      if (!camAwayTimer) {
-        camAwayTimer = setTimeout(() => {
-          camAwayTimer = null;
-          if (document.hidden || (!document.hasFocus() && !popupOpen)) {
-            stopCameraStream();
-          }
-        }, 500);
+      // Tab WhatsApp Web menjadi sensor kamera utama yang memantau pengintip di seluruh tab.
+      // Kamera tetap aktif selama jendela browser Chrome aktif (meski user pindah ke tab lain).
+      // Kamera HANYA tidur (mati) jika user minimize atau beralih ke aplikasi desktop lain (500ms debounce).
+      if (!browserFocused) {
+        if (!camAwayTimer) {
+          camAwayTimer = setTimeout(() => {
+            camAwayTimer = null;
+            if (!browserFocused) {
+              stopKeepAlive();
+              stopCameraStream();
+            }
+          }, 500);
+        }
+      } else {
+        if (camAwayTimer) { clearTimeout(camAwayTimer); camAwayTimer = null; }
+        keepAliveBackground();
+        if (!camStream) {
+          startCameraStream();
+        }
       }
     } else {
-      if (camAwayTimer) { clearTimeout(camAwayTimer); camAwayTimer = null; }
-      if (!camStream) {
-        startCameraStream();
+      // MODE HANYA DI WA WEB (s.faceScope === "wa"):
+      // Kamera mati seketika jika tab WA Web pindah ke background ATAU jendela browser kehilangan fokus.
+      stopKeepAlive();
+      if (document.hidden) {
+        if (camAwayTimer) { clearTimeout(camAwayTimer); camAwayTimer = null; }
+        stopCameraStream();
+      } else if (!document.hasFocus() && !popupOpen) {
+        if (!camAwayTimer) {
+          camAwayTimer = setTimeout(() => {
+            camAwayTimer = null;
+            if (document.hidden || (!document.hasFocus() && !popupOpen)) {
+              stopCameraStream();
+            }
+          }, 500);
+        }
+      } else {
+        if (camAwayTimer) { clearTimeout(camAwayTimer); camAwayTimer = null; }
+        if (!camStream) {
+          startCameraStream();
+        }
       }
     }
   };
@@ -737,14 +763,6 @@
     if (!alive()) return;
     const want = Boolean(s.faceDetect && s.faceConsent);
     if (want) {
-      if (s.faceScope === "all") {
-        stopCameraStream();
-        ext.storage.local.get(["faceAlert", "faceCount"]).then(({ faceAlert = false, faceCount = 0 }) => {
-          applyGlobalFaceAlert(faceAlert, faceCount);
-        });
-        return;
-      }
-
       if (!faceFrame) {
         runnerReady = false;
         faceHits = faceClear = 0;
@@ -757,8 +775,8 @@
       }
       evaluateCameraPower();
     } else {
+      stopKeepAlive();
       stopCameraStream();
-      applyGlobalFaceAlert(false, 0);
     }
   };
 

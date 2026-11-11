@@ -89,8 +89,20 @@ const startLoop = () => {
       let now = performance.now();
       if (now <= lastTimestamp) now = lastTimestamp + 1;
       lastTimestamp = now;
-      const results = detector.detectForVideo(video, now);
-      const count = results && Array.isArray(results.detections) ? results.detections.length : 0;
+      let count = 0;
+      let bitmap = null;
+      try {
+        bitmap = await createImageBitmap(video);
+        const results = detector.detectForVideo(bitmap, now);
+        count = results && Array.isArray(results.detections) ? results.detections.length : 0;
+      } catch (err) {
+        try {
+          const results = detector.detectForVideo(video, now);
+          count = results && Array.isArray(results.detections) ? results.detections.length : 0;
+        } catch {}
+      } finally {
+        if (bitmap) { try { bitmap.close(); } catch {} }
+      }
       if (count >= 2) {
         hits++;
         clear = 0;

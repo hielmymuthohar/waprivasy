@@ -334,22 +334,9 @@ const refreshWaChats = async () => {
   renderChipsAndList();
 };
 
-const requestExtensionCameraPermission = async () => {
-  try {
-    const probe = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-    probe.getTracks().forEach((t) => {
-      try { t.stop(); t.enabled = false; } catch {}
-    });
-    return true;
-  } catch {
-    return false;
-  }
-};
-
 const renderFaceCardUI = (isOn, scope) => {
   const badge = $("faceBadge");
   const desc = $("faceDesc");
-  const actionRow = $("faceActionRow");
   const scopeBox = $("faceScopeBox");
   if (!badge) return;
   const currentScope = scope || (state && state.faceScope) || "wa";
@@ -365,13 +352,9 @@ const renderFaceCardUI = (isOn, scope) => {
     if (waBtn) waBtn.classList.toggle("active", !isAll);
     if (allBtn) allBtn.classList.toggle("active", isAll);
     if (noteEl) {
-      if (isAll && state && state.extCameraBlocked) {
-        noteEl.innerHTML = `<span style="color:var(--danger)">Izin kamera ekstensi belum aktif di browser. Klik tombol di bawah untuk mengizinkan.</span>`;
-      } else {
-        noteEl.textContent = isAll
-          ? "Melindungi privasi di seluruh tab browser. Jika terdeteksi orang mengintip (>1 wajah), tab yang aktif otomatis disamarkan (blur). Kamera otomatis mati saat browser tidak digunakan."
-          : "Kamera aktif hanya saat tab WhatsApp Web dibuka, dan otomatis mati saat Anda berpindah tab atau meminimalkan browser.";
-      }
+      noteEl.textContent = isAll
+        ? "Melindungi privasi di seluruh tab browser. Kamera tetap memantau saat Anda berpindah tab dan otomatis menyamarkan layar jika terdeteksi pengintip (>1 wajah). Kamera otomatis tidur jika Anda meminimalkan browser."
+        : "Kamera aktif hanya saat tab WhatsApp Web dibuka, dan otomatis mati saat Anda berpindah tab atau meminimalkan browser.";
     }
     if (desc) {
       desc.textContent = isAll
@@ -383,18 +366,6 @@ const renderFaceCardUI = (isOn, scope) => {
     badge.textContent = "Mati";
     if (scopeBox) scopeBox.style.display = "none";
     if (desc) desc.textContent = "Deteksi AI lokal memantau pengintip di layar. Privasi 100% di memori, tanpa simpan atau kirim gambar.";
-  }
-
-  if (actionRow) {
-    actionRow.style.display = "block";
-    const btn = $("faceSetup");
-    if (btn) {
-      if (isAll && state && state.extCameraBlocked) {
-        btn.innerHTML = `<svg class="wps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>Beri Izin Kamera di Browser...</span>`;
-      } else {
-        btn.innerHTML = `<svg class="wps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg><span>Uji &amp; Atur Kamera di Browser...</span>`;
-      }
-    }
   }
 };
 
@@ -427,21 +398,11 @@ ext.storage.local.get(DEFAULTS).then(async (s) => {
           if (v) {
             state.faceConsent = true;
             payload.faceConsent = true;
-            if (state.faceScope === "all") {
-              const hasCam = await requestExtensionCameraPermission();
-              if (!hasCam) {
-                payload.extCameraBlocked = true;
-                state.extCameraBlocked = true;
-                ext.tabs.create({ url: ext.runtime.getURL("camera-setup.html") });
-              } else {
-                payload.extCameraBlocked = false;
-                state.extCameraBlocked = false;
-              }
-            }
           }
           renderFaceCardUI(Boolean(v), state.faceScope);
           await ext.storage.local.set(payload);
-          await runInWaTabs(v && state.faceScope === "wa" ? "startCamera" : "stopCamera");
+          await runInWaTabs(v ? "startCamera" : "stopCamera");
+          await runInWaTabs("sync");
         } else {
           await ext.storage.local.set(payload);
           await runInWaTabs("sync");
@@ -627,12 +588,9 @@ $("regKey").addEventListener("click", async () => {
   window.close();
 });
 
-$("faceSetup").addEventListener("click", () => ext.tabs.create({ url: ext.runtime.getURL("camera-setup.html") }));
-
 $("faceScopeWa").addEventListener("click", async () => {
   state.faceScope = "wa";
-  state.extCameraBlocked = false;
-  await ext.storage.local.set({ faceScope: "wa", extCameraBlocked: false });
+  await ext.storage.local.set({ faceScope: "wa" });
   renderFaceCardUI(Boolean(state.faceDetect), "wa");
   await runInWaTabs(state.faceDetect ? "startCamera" : "stopCamera");
   await runInWaTabs("sync");
@@ -640,31 +598,18 @@ $("faceScopeWa").addEventListener("click", async () => {
 
 $("faceScopeAll").addEventListener("click", async () => {
   state.faceScope = "all";
-  const payload = { faceScope: "all" };
-  if (state.faceDetect) {
-    const hasCam = await requestExtensionCameraPermission();
-    if (!hasCam) {
-      payload.extCameraBlocked = true;
-      state.extCameraBlocked = true;
-      ext.tabs.create({ url: ext.runtime.getURL("camera-setup.html") });
-    } else {
-      payload.extCameraBlocked = false;
-      state.extCameraBlocked = false;
-    }
-  }
-  await ext.storage.local.set(payload);
+  await ext.storage.local.set({ faceScope: "all" });
   renderFaceCardUI(Boolean(state.faceDetect), "all");
-  await runInWaTabs("stopCamera");
+  await runInWaTabs(state.faceDetect ? "startCamera" : "stopCamera");
   await runInWaTabs("sync");
 });
 
 ext.storage.onChanged.addListener((changes) => {
-  if (changes.extCameraBlocked || changes.faceScope || changes.faceDetect || changes.faceConsent) {
-    ext.storage.local.get(["faceDetect", "faceScope", "extCameraBlocked"]).then((s) => {
+  if (changes.faceScope || changes.faceDetect || changes.faceConsent) {
+    ext.storage.local.get(["faceDetect", "faceScope"]).then((s) => {
       if (state) {
         state.faceDetect = s.faceDetect;
         state.faceScope = s.faceScope;
-        state.extCameraBlocked = s.extCameraBlocked;
       }
       const chk = $("faceDetect");
       if (chk) chk.checked = Boolean(s.faceDetect);
