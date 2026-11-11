@@ -10,6 +10,7 @@ let clear = 0;
 let isAlert = false;
 let isPaused = false;
 let isDetecting = false;
+let lastTimestamp = 0;
 const video = document.getElementById("v");
 
 const initDetector = async () => {
@@ -29,27 +30,33 @@ const startCamera = async () => {
   if (stream || isPaused) return;
   try {
     await initDetector();
-    stream = await navigator.mediaDevices.getUserMedia({
+    const mediaStream = await navigator.mediaDevices.getUserMedia({
       video: { width: { ideal: 320 }, height: { ideal: 240 }, facingMode: "user" },
       audio: false,
     });
     if (isPaused) {
-      stream.getTracks().forEach((t) => { try { t.stop(); t.enabled = false; } catch {} });
-      stream = null;
+      mediaStream.getTracks().forEach((t) => { try { t.stop(); t.enabled = false; } catch {} });
       return;
     }
+    stream = mediaStream;
     video.srcObject = stream;
     await video.play();
+    ext.storage.local.set({ extCameraBlocked: false }).catch(() => {});
     startLoop();
   } catch (err) {
     console.error("[WPS Offscreen Cam Error]", err);
+    if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+      ext.storage.local.set({ extCameraBlocked: true }).catch(() => {});
+    }
   }
 };
 
 const stopCamera = () => {
   if (timer) { clearInterval(timer); timer = null; }
   if (stream) {
-    stream.getTracks().forEach((t) => { try { t.stop(); t.enabled = false; } catch {} });
+    try {
+      stream.getTracks().forEach((t) => { try { t.stop(); t.enabled = false; } catch {} });
+    } catch {}
     stream = null;
   }
   if (video) {
@@ -68,9 +75,13 @@ const startLoop = () => {
   if (timer || !stream || !detector) return;
   timer = setInterval(async () => {
     if (isDetecting || !video || video.readyState < 2 || !detector || isPaused) return;
+    if (!video.videoWidth || !video.videoHeight) return;
     isDetecting = true;
     try {
-      const results = detector.detectForVideo(video, performance.now());
+      let now = performance.now();
+      if (now <= lastTimestamp) now = lastTimestamp + 1;
+      lastTimestamp = now;
+      const results = detector.detectForVideo(video, now);
       const count = results && Array.isArray(results.detections) ? results.detections.length : 0;
       if (count >= 2) {
         hits++;
@@ -87,7 +98,7 @@ const startLoop = () => {
           await ext.storage.local.set({ faceAlert: false, faceCount: count });
         }
       }
-    } catch {
+    } catch (e) {
       // frame drop sesaat
     } finally {
       isDetecting = false;
@@ -104,12 +115,19 @@ ext.runtime.onMessage.addListener((m) => {
   } else if (m.type === "RESUME_CAMERA") {
     isPaused = false;
     startCamera();
-  } else if (m.type === "START_OFFSCREEN") {
-    isPaused = false;
-    startCamera();
-  } else if (m.type === "STOP_OFFSCREEN") {
-    isPaused = true;
-    stopCamera();
+  }
+});
+
+// Listener perubahan storage
+ext.storage.onChanged.addListener((changes) => {
+  if (changes.faceDetect || changes.faceConsent || changes.faceScope) {
+    ext.storage.local.get(["faceDetect", "faceConsent", "faceScope"]).then((s) => {
+      if (s.faceDetect && s.faceConsent && s.faceScope === "all") {
+        if (!isPaused) startCamera();
+      } else {
+        stopCamera();
+      }
+    });
   }
 });
 

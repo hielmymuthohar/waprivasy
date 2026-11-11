@@ -13,50 +13,59 @@
 
   const ensureOverlay = () => {
     if (host && host.isConnected) return;
-    host = document.createElement("div");
-    host.id = "wps-global-shield-host";
-    shadow = host.attachShadow({ mode: "closed" });
-    shadow.innerHTML = `
-      <style>
-        :host { all: initial; position: fixed; inset: 0; z-index: 2147483647; pointer-events: none; }
-        .backdrop {
-          position: fixed; inset: 0;
-          background: rgba(15, 23, 42, 0.45);
-          backdrop-filter: blur(24px);
-          -webkit-backdrop-filter: blur(24px);
-          display: none;
-          pointer-events: auto;
-          user-select: none;
-          z-index: 2147483647;
-          opacity: 0;
-          transition: opacity 0.2s ease;
-        }
-        .backdrop.on {
-          display: block;
-          opacity: 1;
-        }
-        .badge {
-          position: fixed; right: 16px; bottom: 16px;
-          z-index: 2147483647;
-          background: #182229;
-          border: 1px solid #2a3942;
-          color: #ffb74d;
-          padding: 8px 14px;
-          border-radius: 9999px;
-          font: 12.5px system-ui, -apple-system, sans-serif;
-          box-shadow: 0 4px 14px rgba(0,0,0,.45);
-          display: none;
-          align-items: center;
-          gap: 7px;
-          pointer-events: none;
-        }
-        .badge.on { display: flex; }
-        .badge svg { flex-shrink: 0; }
-      </style>
-      <div class="backdrop" id="backdrop"></div>
-      <div class="badge" id="badge"></div>
-    `;
-    (document.body || document.documentElement).appendChild(host);
+    if (!host) {
+      host = document.createElement("div");
+      host.id = "wps-global-shield-host";
+      shadow = host.attachShadow({ mode: "closed" });
+      shadow.innerHTML = `
+        <style>
+          :host { all: initial; position: fixed; inset: 0; z-index: 2147483647; pointer-events: none; }
+          .backdrop {
+            position: fixed; inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            display: none;
+            pointer-events: auto;
+            user-select: none;
+            z-index: 2147483647;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+          }
+          .backdrop.on {
+            display: block;
+            opacity: 1;
+          }
+          .badge {
+            position: fixed; right: 16px; bottom: 16px;
+            z-index: 2147483647;
+            background: #182229;
+            border: 1px solid #2a3942;
+            color: #ffb74d;
+            padding: 8px 14px;
+            border-radius: 9999px;
+            font: 12.5px system-ui, -apple-system, sans-serif;
+            box-shadow: 0 4px 14px rgba(0,0,0,.45);
+            display: none;
+            align-items: center;
+            gap: 7px;
+            pointer-events: none;
+          }
+          .badge.on { display: flex; }
+          .badge svg { flex-shrink: 0; }
+        </style>
+        <div class="backdrop" id="backdrop"></div>
+        <div class="badge" id="badge"></div>
+      `;
+    }
+    const target = document.body || document.documentElement;
+    if (target && !host.isConnected) {
+      target.appendChild(host);
+    } else if (!target) {
+      document.addEventListener("DOMContentLoaded", () => {
+        (document.body || document.documentElement)?.appendChild(host);
+      }, { once: true });
+    }
   };
 
   const applyAlert = (on, count) => {

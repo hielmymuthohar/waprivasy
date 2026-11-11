@@ -334,6 +334,18 @@ const refreshWaChats = async () => {
   renderChipsAndList();
 };
 
+const requestExtensionCameraPermission = async () => {
+  try {
+    const probe = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 } });
+    probe.getTracks().forEach((t) => {
+      try { t.stop(); t.enabled = false; } catch {}
+    });
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 const renderFaceCardUI = (isOn, scope) => {
   const badge = $("faceBadge");
   const desc = $("faceDesc");
@@ -353,16 +365,22 @@ const renderFaceCardUI = (isOn, scope) => {
     if (waBtn) waBtn.classList.toggle("active", !isAll);
     if (allBtn) allBtn.classList.toggle("active", isAll);
     if (noteEl) {
-      noteEl.textContent = isAll
-        ? "Melindungi privasi di seluruh tab browser. Jika terdeteksi orang mengintip (>1 wajah), tab yang aktif otomatis disamarkan (blur). Kamera otomatis mati saat browser tidak digunakan."
-        : "Kamera aktif hanya saat tab WhatsApp Web dibuka, dan otomatis mati saat Anda berpindah tab atau meminimalkan browser.";
+      if (isAll && state && state.extCameraBlocked) {
+        noteEl.innerHTML = `<span style="color:var(--danger)">Izin kamera ekstensi belum aktif di browser. Klik tombol di bawah untuk mengizinkan.</span>`;
+      } else {
+        noteEl.textContent = isAll
+          ? "Melindungi privasi di seluruh tab browser. Jika terdeteksi orang mengintip (>1 wajah), tab yang aktif otomatis disamarkan (blur). Kamera otomatis mati saat browser tidak digunakan."
+          : "Kamera aktif hanya saat tab WhatsApp Web dibuka, dan otomatis mati saat Anda berpindah tab atau meminimalkan browser.";
+      }
     }
     if (desc) {
       desc.textContent = isAll
         ? "Deteksi AI aktif memantau pengintip di seluruh tab browser."
         : "Deteksi AI aktif memantau pengintip saat WhatsApp Web dibuka.";
     }
-    if (actionRow) actionRow.style.display = "none";
+    if (actionRow) {
+      actionRow.style.display = (isAll && state && state.extCameraBlocked) ? "block" : "none";
+    }
   } else {
     badge.className = "status-pill off";
     badge.textContent = "Mati";
@@ -398,13 +416,24 @@ ext.storage.local.get(DEFAULTS).then(async (s) => {
         state[k] = v;
         const payload = { [k]: v };
         if (k === "faceDetect") {
-          renderFaceCardUI(Boolean(v), state.faceScope);
           if (v) {
             state.faceConsent = true;
             payload.faceConsent = true;
+            if (state.faceScope === "all") {
+              const hasCam = await requestExtensionCameraPermission();
+              if (!hasCam) {
+                payload.extCameraBlocked = true;
+                state.extCameraBlocked = true;
+                ext.tabs.create({ url: ext.runtime.getURL("camera-setup.html") });
+              } else {
+                payload.extCameraBlocked = false;
+                state.extCameraBlocked = false;
+              }
+            }
           }
+          renderFaceCardUI(Boolean(v), state.faceScope);
           await ext.storage.local.set(payload);
-          await runInWaTabs(v ? "startCamera" : "stopCamera");
+          await runInWaTabs(v && state.faceScope === "wa" ? "startCamera" : "stopCamera");
         } else {
           await ext.storage.local.set(payload);
           await runInWaTabs("sync");
@@ -594,16 +623,46 @@ $("faceSetup").addEventListener("click", () => ext.tabs.create({ url: ext.runtim
 
 $("faceScopeWa").addEventListener("click", async () => {
   state.faceScope = "wa";
-  await ext.storage.local.set({ faceScope: "wa" });
+  state.extCameraBlocked = false;
+  await ext.storage.local.set({ faceScope: "wa", extCameraBlocked: false });
   renderFaceCardUI(Boolean(state.faceDetect), "wa");
+  await runInWaTabs(state.faceDetect ? "startCamera" : "stopCamera");
   await runInWaTabs("sync");
 });
 
 $("faceScopeAll").addEventListener("click", async () => {
   state.faceScope = "all";
-  await ext.storage.local.set({ faceScope: "all" });
+  const payload = { faceScope: "all" };
+  if (state.faceDetect) {
+    const hasCam = await requestExtensionCameraPermission();
+    if (!hasCam) {
+      payload.extCameraBlocked = true;
+      state.extCameraBlocked = true;
+      ext.tabs.create({ url: ext.runtime.getURL("camera-setup.html") });
+    } else {
+      payload.extCameraBlocked = false;
+      state.extCameraBlocked = false;
+    }
+  }
+  await ext.storage.local.set(payload);
   renderFaceCardUI(Boolean(state.faceDetect), "all");
+  await runInWaTabs("stopCamera");
   await runInWaTabs("sync");
+});
+
+ext.storage.onChanged.addListener((changes) => {
+  if (changes.extCameraBlocked || changes.faceScope || changes.faceDetect || changes.faceConsent) {
+    ext.storage.local.get(["faceDetect", "faceScope", "extCameraBlocked"]).then((s) => {
+      if (state) {
+        state.faceDetect = s.faceDetect;
+        state.faceScope = s.faceScope;
+        state.extCameraBlocked = s.extCameraBlocked;
+      }
+      const chk = $("faceDetect");
+      if (chk) chk.checked = Boolean(s.faceDetect);
+      renderFaceCardUI(Boolean(s.faceDetect), s.faceScope);
+    });
+  }
 });
 
 const saveDecoyPin = async () => {

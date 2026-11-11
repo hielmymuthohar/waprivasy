@@ -672,11 +672,26 @@
 
   const isTabActive = () => {
     if (s.faceScope === "all") {
-      // Di mode semua tab, selama jendela browser Chrome aktif/difokuskan, sensor berjalan
       return browserFocused;
     }
-    // Di mode hanya WA, tab WA Web harus aktif di depan mata dan fokus
     return !document.hidden && (document.hasFocus() || popupOpen);
+  };
+
+  const applyGlobalFaceAlert = (alert, count) => {
+    if (alert) {
+      if (!faceAlertActive) {
+        faceAlertActive = true;
+        setFlag("data-wps-face-alert", true);
+        toast(ICONS.alert + " <span>Terdeteksi " + (count || 2) + " wajah! Seluruh chat disamarkan otomatis.</span>", true);
+        render();
+      }
+    } else {
+      if (faceAlertActive) {
+        faceAlertActive = false;
+        setFlag("data-wps-face-alert", false);
+        render();
+      }
+    }
   };
 
   const evaluateCameraPower = () => {
@@ -689,43 +704,31 @@
 
     if (s.faceScope === "all") {
       // MODE SEMUA TAB BROWSER:
-      // Kamera tetap aktif selama berada di dalam browser Chrome (meski pindah tab lain).
-      // HANYA mati jika jendela browser kehilangan fokus / minimize (500ms debounce).
-      if (!browserFocused) {
-        if (!camAwayTimer) {
-          camAwayTimer = setTimeout(() => {
-            camAwayTimer = null;
-            if (!browserFocused) {
-              stopCameraStream();
-            }
-          }, 500);
-        }
-      } else {
-        if (camAwayTimer) { clearTimeout(camAwayTimer); camAwayTimer = null; }
-        if (!camStream) {
-          startCameraStream();
-        }
+      // Tab WhatsApp Web TIDAK mengambil kontrol webcam.
+      // Sensor kamera dijalankan oleh extension offscreen runner terpusat.
+      if (camAwayTimer) { clearTimeout(camAwayTimer); camAwayTimer = null; }
+      stopCameraStream();
+      return;
+    }
+
+    // MODE HANYA DI WA WEB (s.faceScope === "wa"):
+    // Kamera mati seketika jika tab WA Web pindah ke background ATAU jendela browser kehilangan fokus.
+    if (document.hidden) {
+      if (camAwayTimer) { clearTimeout(camAwayTimer); camAwayTimer = null; }
+      stopCameraStream();
+    } else if (!document.hasFocus() && !popupOpen) {
+      if (!camAwayTimer) {
+        camAwayTimer = setTimeout(() => {
+          camAwayTimer = null;
+          if (document.hidden || (!document.hasFocus() && !popupOpen)) {
+            stopCameraStream();
+          }
+        }, 500);
       }
     } else {
-      // MODE HANYA DI WA WEB:
-      // Kamera mati seketika jika tab WA Web pindah ke background ATAU jendela browser kehilangan fokus.
-      if (document.hidden) {
-        if (camAwayTimer) { clearTimeout(camAwayTimer); camAwayTimer = null; }
-        stopCameraStream();
-      } else if (!document.hasFocus() && !popupOpen) {
-        if (!camAwayTimer) {
-          camAwayTimer = setTimeout(() => {
-            camAwayTimer = null;
-            if (document.hidden || (!document.hasFocus() && !popupOpen)) {
-              stopCameraStream();
-            }
-          }, 500);
-        }
-      } else {
-        if (camAwayTimer) { clearTimeout(camAwayTimer); camAwayTimer = null; }
-        if (!camStream) {
-          startCameraStream();
-        }
+      if (camAwayTimer) { clearTimeout(camAwayTimer); camAwayTimer = null; }
+      if (!camStream) {
+        startCameraStream();
       }
     }
   };
@@ -734,6 +737,14 @@
     if (!alive()) return;
     const want = Boolean(s.faceDetect && s.faceConsent);
     if (want) {
+      if (s.faceScope === "all") {
+        stopCameraStream();
+        ext.storage.local.get(["faceAlert", "faceCount"]).then(({ faceAlert = false, faceCount = 0 }) => {
+          applyGlobalFaceAlert(faceAlert, faceCount);
+        });
+        return;
+      }
+
       if (!faceFrame) {
         runnerReady = false;
         faceHits = faceClear = 0;
@@ -747,6 +758,7 @@
       evaluateCameraPower();
     } else {
       stopCameraStream();
+      applyGlobalFaceAlert(false, 0);
     }
   };
 
@@ -845,7 +857,16 @@
   const observer = new MutationObserver(scheduleScan);
   observer.observe(root, { childList: true, subtree: true, characterData: true });
 
-  const onStorageChanged = () => load(false);
+  const onStorageChanged = (changes) => {
+    if (changes && (changes.faceAlert || changes.faceCount)) {
+      if (s.faceScope === "all") {
+        const isAlert = changes.faceAlert ? changes.faceAlert.newValue : s.faceAlert;
+        const count = changes.faceCount ? changes.faceCount.newValue : s.faceCount;
+        applyGlobalFaceAlert(Boolean(isAlert), count);
+      }
+    }
+    load(false);
+  };
   const onRuntimeMessage = (m, _sender, sendResponse) => {
     if (!m || !m.wpsCmd) return;
     if (m.wpsCmd === "ping") sendResponse({ ok: true, v: 12 });

@@ -8,12 +8,16 @@ const ICONS = {
 $("agree").addEventListener("change", () => { $("go").disabled = !$("agree").checked; });
 $("go").addEventListener("click", async () => {
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-    stream.getTracks().forEach((t) => t.stop());
-    await ext.storage.local.set({ faceConsent: true, faceDetect: true });
-    $("msg").innerHTML = "<strong style='color:var(--primary);display:inline-flex;align-items:center;gap:6px;'>" + ICONS.check + " Kamera berhasil diizinkan & deteksi wajah aktif!</strong><br><span style='color:var(--text-muted)'>Tab ini sudah bisa ditutup. Buka tab WhatsApp Web Anda untuk mencobanya.</span>";
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 }, audio: false });
+    stream.getTracks().forEach((t) => { try { t.stop(); t.enabled = false; } catch {} });
+    await ext.storage.local.set({ faceConsent: true, faceDetect: true, extCameraBlocked: false });
+    $("msg").className = "note ok";
+    $("msg").innerHTML = "<strong style='color:var(--primary);display:inline-flex;align-items:center;gap:6px;'>" + ICONS.check + " Izin kamera berhasil diberikan & deteksi wajah aktif!</strong><br><span style='color:var(--text-muted)'>Fitur anti-ngintip kini aktif di seluruh tab. Menutup tab ini otomatis...</span>";
+    setTimeout(() => {
+      try { window.close(); } catch {}
+    }, 1800);
   } catch (e) {
     $("msg").className = "note err";
-    $("msg").textContent = "Izin kamera ditolak atau kamera tidak tersedia (" + (e.name || e) + ").";
+    $("msg").textContent = "Izin kamera ditolak atau kamera tidak tersedia (" + (e.name || e) + "). Klik ikon gembok/kamera di bilah alamat browser lalu pilih 'Izinkan'.";
   }
 });

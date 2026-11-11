@@ -19,7 +19,39 @@ const notifyWaTabs = async (msg) => {
   return results.find(Boolean) || { ok: true };
 };
 
-ext.runtime.onInstalled.addListener(() => notifyWaTabs());
+// Injeksi skrip global-blur.js ke semua tab non-WA yang sedang terbuka
+const injectAllTabs = async () => {
+  try {
+    const tabs = await ext.tabs.query({});
+    for (const tab of tabs) {
+      if (!tab.id || !tab.url) continue;
+      const u = tab.url.toLowerCase();
+      if (
+        u.startsWith("chrome://") ||
+        u.startsWith("chrome-extension://") ||
+        u.startsWith("edge://") ||
+        u.startsWith("about:") ||
+        u.startsWith("view-source:")
+      ) {
+        continue;
+      }
+      if (u.startsWith("https://web.whatsapp.com/")) {
+        continue;
+      }
+      try {
+        await ext.scripting.executeScript({
+          target: { tabId: tab.id },
+          files: ["global-blur.js"],
+        });
+      } catch {}
+    }
+  } catch {}
+};
+
+ext.runtime.onInstalled.addListener(() => {
+  notifyWaTabs();
+  injectAllTabs();
+});
 notifyWaTabs();
 
 ext.runtime.onConnect.addListener((port) => {
@@ -92,7 +124,9 @@ const setupOffscreen = async () => {
       justification: "Deteksi pengintip wajah di seluruh tab browser",
     });
   } catch (err) {
-    console.error("[WPS Background Offscreen Create Error]", err);
+    if (!String(err).includes("Only a single offscreen document may be created")) {
+      console.error("[WPS Background Offscreen Create Error]", err);
+    }
   }
 };
 
@@ -110,33 +144,44 @@ const syncOffscreenState = async () => {
   try {
     const { faceDetect = false, faceConsent = false, faceScope = "wa" } =
       await ext.storage.local.get(["faceDetect", "faceConsent", "faceScope"]);
+
     if (faceDetect && faceConsent && faceScope === "all") {
-      // Cek apakah ada tab WhatsApp Web yang sedang terbuka
-      const waTabs = await ext.tabs.query({ url: "https://web.whatsapp.com/*" });
-      if (waTabs.length > 0) {
-        // WhatsApp Web aktif dan bertindak sebagai sensor kamera utama
-        await closeOffscreen();
-      } else {
-        // Jika WhatsApp Web ditutup, jalankan offscreen document sebagai sensor independen
-        await setupOffscreen();
-      }
+      // Pada mode semua tab, offscreen document SELALU aktif sebagai sensor pusat tunggal
+      await setupOffscreen();
+      await injectAllTabs();
     } else {
       await closeOffscreen();
-      await ext.storage.local.set({ faceAlert: false });
+      await ext.storage.local.set({ faceAlert: false, faceCount: 0 });
     }
   } catch {}
 };
 
-// Auto-mati saat jendela browser diminimize atau pengguna beralih ke aplikasi desktop lain (500ms responsif)
+// Auto-mati saat jendela browser diminimize atau pengguna beralih ke aplikasi desktop lain (500ms debounce)
+let focusDebounceTimer = null;
 if (typeof chrome !== "undefined" && chrome.windows) {
-  chrome.windows.onFocusChanged.addListener(async (windowId) => {
-    try {
-      const isBrowserActive = windowId !== chrome.windows.WINDOW_ID_NONE;
-      // Kirim status fokus jendela ke tab WhatsApp Web
-      notifyWaTabs({ wpsCmd: "browserFocus", active: isBrowserActive }).catch(() => {});
-      // Kirim status ke offscreen document jika aktif
-      ext.runtime.sendMessage({ type: isBrowserActive ? "RESUME_CAMERA" : "PAUSE_CAMERA" }).catch(() => {});
-    } catch {}
+  chrome.windows.onFocusChanged.addListener((windowId) => {
+    if (focusDebounceTimer) {
+      clearTimeout(focusDebounceTimer);
+      focusDebounceTimer = null;
+    }
+
+    const isBrowserActive = windowId !== chrome.windows.WINDOW_ID_NONE;
+    if (!isBrowserActive) {
+      // Tunggu 500ms untuk memastikan pengguna benar-benar beralih keluar browser
+      focusDebounceTimer = setTimeout(async () => {
+        focusDebounceTimer = null;
+        try {
+          ext.runtime.sendMessage({ type: "PAUSE_CAMERA" }).catch(() => {});
+          notifyWaTabs({ wpsCmd: "browserFocus", active: false }).catch(() => {});
+        } catch {}
+      }, 500);
+    } else {
+      // Kembali ke browser: resume kamera seketika tanpa delay
+      try {
+        ext.runtime.sendMessage({ type: "RESUME_CAMERA" }).catch(() => {});
+        notifyWaTabs({ wpsCmd: "browserFocus", active: true }).catch(() => {});
+      } catch {}
+    }
   });
 }
 
