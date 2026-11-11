@@ -68,7 +68,7 @@ const ensureTabInjected = async (tabId) => {
       target: { tabId },
       func: () => window.__wpsVersion || 0,
     });
-    if (!chk || !chk[0] || chk[0].result !== 7) {
+    if (!chk || !chk[0] || chk[0].result !== 8) {
       await ext.scripting.insertCSS({ target: { tabId }, files: ["content.css"] });
       await ext.scripting.executeScript({ target: { tabId }, files: ["pin.js", "content.js"] });
     }
@@ -321,7 +321,7 @@ ext.storage.local.get(DEFAULTS).then(async (s) => {
   currentProfile = s.profile && PROFILE_PRESETS[s.profile] ? s.profile : "custom";
   profileConfigs = ensureProfileConfigs(s);
   showAuthStatus(!!s.pinHash, !!s.webauthnCred, s.webauthnOrigin === "wa");
-  $("faceDetect").disabled = !s.faceConsent;
+  $("faceDetect").disabled = false;
   if (s.decoyHash) $("decoyStatus").textContent = "✓ PIN decoy tersimpan.";
 
   for (const el of document.querySelectorAll("[data-key]")) {
@@ -333,7 +333,12 @@ ext.storage.local.get(DEFAULTS).then(async (s) => {
         await syncActiveProfileToStorage();
       } else {
         state[k] = v;
-        await ext.storage.local.set({ [k]: v });
+        const payload = { [k]: v };
+        if (k === "faceDetect" && v) {
+          state.faceConsent = true;
+          payload.faceConsent = true;
+        }
+        await ext.storage.local.set(payload);
         await runInWaTabs("sync");
       }
     };

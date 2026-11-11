@@ -441,16 +441,26 @@
     if (panic && !savedTitle) { savedTitle = document.title; document.title = "Spreadsheet tanpa judul"; }
     else if (!panic && savedTitle) { document.title = savedTitle; savedTitle = ""; }
     const cam = shadow.getElementById("cam");
-    cam.classList.toggle("on", Boolean(faceFrame || camError));
+    const showCam = Boolean(faceFrame || camError || s.faceDetect);
+    cam.classList.toggle("on", showCam);
+    cam.style.pointerEvents = camError ? "auto" : "none";
+    cam.style.cursor = camError ? "pointer" : "default";
     if (camError) {
-      cam.textContent = "⚠️ " + camError;
+      cam.textContent = "⚠️ " + camError + " (Klik di sini untuk coba lagi)";
       cam.style.color = "#ff8a80";
+      cam.onclick = () => startCameraStream();
     } else if (faceAlertActive || lastFaceCount >= 2) {
       cam.textContent = "⚠️ Terdeteksi " + lastFaceCount + " wajah (Seluruh obrolan disamarkan)";
       cam.style.color = "#ffb74d";
-    } else {
+      cam.onclick = null;
+    } else if (camStream) {
       cam.textContent = "📷 Deteksi wajah aktif (" + lastFaceCount + " wajah terdeteksi)";
       cam.style.color = "#e9edef";
+      cam.onclick = null;
+    } else {
+      cam.textContent = "📷 Memulai kamera...";
+      cam.style.color = "#8696a0";
+      cam.onclick = null;
     }
     if (locked && showPin) shadow.getElementById("pin").focus();
   };
@@ -491,22 +501,93 @@
   const EXT_ORIGIN = alive() ? new URL(ext.runtime.getURL("")).origin : "";
   let lastFaceCount = 0;
   let faceAlertActive = false;
+  let camStream = null;
+  let camVideo = null;
+  let frameTimer = null;
+  let runnerReady = false;
+
+  const startCameraStream = async () => {
+    if (camStream) return true;
+    try {
+      camStream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 320 }, height: { ideal: 240 }, facingMode: "user" },
+        audio: false,
+      });
+      camError = "";
+      if (!camVideo) {
+        camVideo = document.createElement("video");
+        camVideo.muted = true;
+        camVideo.playsInline = true;
+        camVideo.style.cssText = "position:fixed;width:320px;height:240px;top:-9999px;left:-9999px;opacity:0.01;pointer-events:none;";
+        root.appendChild(camVideo);
+      }
+      camVideo.srcObject = camStream;
+      await camVideo.play();
+      startFrameLoop();
+      render();
+      return true;
+    } catch (e) {
+      camStream = null;
+      camError = e.name === "NotAllowedError"
+        ? "Izin kamera diblokir di browser. Klik ikon gembok/kamera di URL lalu 'Izinkan'."
+        : ("Kamera error: " + (e.name || e.message || e));
+      render();
+      return false;
+    }
+  };
+
+  const stopCameraStream = () => {
+    if (frameTimer) { clearInterval(frameTimer); frameTimer = null; }
+    if (camStream) {
+      camStream.getTracks().forEach((t) => t.stop());
+      camStream = null;
+    }
+    if (camVideo) {
+      camVideo.srcObject = null;
+      camVideo.remove();
+      camVideo = null;
+    }
+  };
+
+  const startFrameLoop = () => {
+    if (frameTimer || !camStream || !runnerReady) return;
+    let sending = false;
+    frameTimer = setInterval(async () => {
+      if (sending || !faceFrame || !faceFrame.contentWindow || !camVideo || !camVideo.videoWidth || camVideo.readyState < 2) return;
+      sending = true;
+      try {
+        const bitmap = await createImageBitmap(camVideo);
+        faceFrame.contentWindow.postMessage({ wpsFrame: bitmap, time: performance.now() }, EXT_ORIGIN, [bitmap]);
+      } catch (err) {
+        // Abaikan frame drop sesaat
+      } finally {
+        sending = false;
+      }
+    }, 350);
+  };
 
   const syncFace = () => {
     const want = Boolean(s.faceDetect && s.faceConsent && alive());
-    if (want && !faceFrame) {
-      camError = false;
+    if (want) {
+      if (!faceFrame) {
+        runnerReady = false;
+        faceHits = faceClear = 0;
+        lastFaceCount = 0;
+        faceAlertActive = false;
+        faceFrame = document.createElement("iframe");
+        faceFrame.src = ext.runtime.getURL("face.html");
+        faceFrame.style.cssText = "position:fixed;width:1px;height:1px;border:0;opacity:0;pointer-events:none";
+        root.appendChild(faceFrame);
+      }
+      startCameraStream();
+    } else {
+      stopCameraStream();
+      if (faceFrame) { faceFrame.remove(); faceFrame = null; }
+      runnerReady = false;
       faceHits = faceClear = 0;
       lastFaceCount = 0;
       faceAlertActive = false;
-      faceFrame = document.createElement("iframe");
-      faceFrame.src = ext.runtime.getURL("face.html");
-      faceFrame.allow = "camera *; display-capture";
-      faceFrame.style.cssText = "position:fixed;width:1px;height:1px;border:0;opacity:0;pointer-events:none";
-      root.appendChild(faceFrame);
-    } else if (!want && faceFrame) {
-      faceFrame.remove(); faceFrame = null; faceHits = faceClear = 0;
-      lastFaceCount = 0; faceAlertActive = false; camError = false;
+      camError = "";
       setFlag("data-wps-face-alert", false);
     }
     render();
@@ -518,7 +599,7 @@
       const v = e.data && e.data.wpsFace;
       if (typeof v === "number") {
         lastFaceCount = v;
-        camError = false;
+        camError = "";
         if (v >= 2) {
           faceHits++;
           faceClear = 0;
@@ -538,13 +619,13 @@
         render();
       } else if (typeof v === "string") {
         if (v === "ready") {
-          camError = false;
+          runnerReady = true;
+          camError = "";
+          startFrameLoop();
           render();
         } else if (v.startsWith("error")) {
           const rawErr = v.replace(/^error:/, "");
-          camError = rawErr === "NotAllowedError"
-            ? "Izin kamera diblokir di browser. Klik ikon kamera/gembok di URL lalu 'Izinkan'."
-            : ("Kamera error: " + rawErr);
+          camError = "AI runner error: " + rawErr;
           render();
         }
       }
@@ -603,7 +684,7 @@
   const onStorageChanged = () => load(false);
   const onRuntimeMessage = (m, _sender, sendResponse) => {
     if (!m || !m.wpsCmd) return;
-    if (m.wpsCmd === "ping") sendResponse({ ok: true, v: 7 });
+    if (m.wpsCmd === "ping") sendResponse({ ok: true, v: 8 });
     else if (m.wpsCmd === "getChats") sendResponse({ ok: true, chats: getVisibleChatNames() });
     else if (m.wpsCmd === "lock") { lockNow(); sendResponse({ ok: true }); }
     else if (m.wpsCmd === "panic") { togglePanic(); sendResponse({ ok: true }); }
@@ -626,12 +707,13 @@
     document.removeEventListener("visibilitychange", away);
     try { ext.runtime.onMessage.removeListener(onRuntimeMessage); } catch {}
     try { ext.storage.onChanged.removeListener(onStorageChanged); } catch {}
+    stopCameraStream();
     if (faceFrame) { faceFrame.remove(); faceFrame = null; }
     if (host) { host.remove(); host = null; }
   };
 
   window.__wpsCleanup = cleanup;
-  window.__wpsVersion = 7;
+  window.__wpsVersion = 8;
   window.__wpsGetChats = getVisibleChatNames;
   window.__wpsSync = () => load(false);
   window.__wpsLock = lockNow;
