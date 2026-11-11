@@ -68,7 +68,7 @@ const ensureTabInjected = async (tabId) => {
       target: { tabId },
       func: () => window.__wpsVersion || 0,
     });
-    if (!chk || !chk[0] || chk[0].result !== 5) {
+    if (!chk || !chk[0] || chk[0].result !== 6) {
       await ext.scripting.insertCSS({ target: { tabId }, files: ["content.css"] });
       await ext.scripting.executeScript({ target: { tabId }, files: ["pin.js", "content.js"] });
     }

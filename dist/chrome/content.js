@@ -221,17 +221,16 @@
 
   /* ---------- WebAuthn langsung di top-level web.whatsapp.com (tanpa iframe) ---------- */
   const rnd = (n) => crypto.getRandomValues(new Uint8Array(n));
-  const b64url = (buf) => wpsB64(buf).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  let cachedCredStr = "";
+  let cachedCredId = null;
+  let nextChallenge = rnd(32);
 
-  const derToRaw = (der) => {
-    let i = 3, out = new Uint8Array(64);
-    for (let part = 0; part < 2; part++) {
-      let len = der[i++];
-      let bytes = der.slice(i, i + len); i += len + 1;
-      while (bytes.length > 32) bytes = bytes.slice(1);
-      out.set(bytes, part * 32 + 32 - bytes.length);
+  const getCredId = () => {
+    if (s.webauthnCred !== cachedCredStr) {
+      cachedCredStr = s.webauthnCred || "";
+      cachedCredId = cachedCredStr ? wpsUnb64(cachedCredStr) : null;
     }
-    return out;
+    return cachedCredId;
   };
 
   const registerKeyOnPage = async () => {
@@ -244,55 +243,44 @@
           { type: "public-key", alg: -7 },   // ES256
           { type: "public-key", alg: -257 }, // RS256 (TPM Windows Hello)
         ],
-        authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" },
+        authenticatorSelection: {
+          authenticatorAttachment: "platform",
+          residentKey: "discouraged",
+          requireResidentKey: false,
+          userVerification: "required",
+        },
+        attestation: "none",
       },
     });
     const data = {
       webauthnCred: wpsB64(cred.rawId),
-      webauthnKey: wpsB64(cred.response.getPublicKey()),
+      webauthnKey: cred.response.getPublicKey ? wpsB64(cred.response.getPublicKey()) : "ok",
       webauthnAlg: cred.response.getPublicKeyAlgorithm ? cred.response.getPublicKeyAlgorithm() : -7,
       webauthnOrigin: "wa",
     };
-    await ext.storage.local.set(data);
     Object.assign(s, data);
+    getCredId();
+    await ext.storage.local.set(data);
   };
 
   const unlockKeyOnPage = async () => {
-    const challenge = rnd(32);
+    const id = getCredId();
+    if (!id) return false;
+    const challenge = nextChallenge;
+    nextChallenge = rnd(32);
     const a = await navigator.credentials.get({
       publicKey: {
         challenge,
         userVerification: "required",
-        allowCredentials: [{ type: "public-key", id: wpsUnb64(s.webauthnCred) }],
+        // transports: ["internal"] memotong pencarian Bluetooth/USB/HP (caBLE) di Windows 10/11
+        // sehingga dialog Windows Hello muncul instan tanpa jeda 2-4 detik.
+        allowCredentials: [{ type: "public-key", id, transports: ["internal"] }],
       },
     });
-    const r = a.response;
-    if (JSON.parse(new TextDecoder().decode(r.clientDataJSON)).challenge !== b64url(challenge)) return false;
-    const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", r.clientDataJSON));
-    const auth = new Uint8Array(r.authenticatorData);
-    const data = new Uint8Array(auth.length + 32);
-    data.set(auth);
-    data.set(hash, auth.length);
-
-    if (s.webauthnAlg === -257) {
-      const key = await crypto.subtle.importKey(
-        "spki",
-        wpsUnb64(s.webauthnKey),
-        { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-        false,
-        ["verify"]
-      );
-      return crypto.subtle.verify({ name: "RSASSA-PKCS1-v1_5" }, key, new Uint8Array(r.signature), data);
-    }
-
-    const key = await crypto.subtle.importKey(
-      "spki",
-      wpsUnb64(s.webauthnKey),
-      { name: "ECDSA", namedCurve: "P-256" },
-      false,
-      ["verify"]
-    );
-    return crypto.subtle.verify({ name: "ECDSA", hash: "SHA-256" }, key, derToRaw(new Uint8Array(r.signature)), data);
+    if (!a || !a.response || wpsB64(a.rawId) !== s.webauthnCred) return false;
+    const auth = new Uint8Array(a.response.authenticatorData);
+    // Bit 0 (0x01) = User Present, Bit 2 (0x04) = User Verified oleh Windows Hello
+    return auth.length >= 33 && (auth[32] & 0x05) === 0x05;
   };
 
   /* ---------- Overlay (Shadow DOM) ---------- */
@@ -369,13 +357,41 @@
     const pin = shadow.getElementById("pin");
     const go = shadow.getElementById("go");
     const err = shadow.getElementById("err");
+    const helloBtn = shadow.getElementById("helloBtn");
+    let helloBusy = false;
+    const triggerHello = async () => {
+      if (helloBusy) return;
+      helloBusy = true;
+      err.textContent = "";
+      const origHtml = helloBtn.innerHTML;
+      helloBtn.innerHTML = "<span>⏳</span><span>Memverifikasi Windows Hello...</span>";
+      try {
+        if (await unlockKeyOnPage()) {
+          fails = 0; decoy = false; pin.value = ""; err.textContent = "";
+          setLocked(false);
+        } else {
+          err.textContent = "Verifikasi Windows Hello gagal.";
+        }
+      } catch (e) {
+        if (s.webauthnOrigin !== "wa") {
+          err.textContent = "Kredensial lama terdeteksi. Buka PIN lalu klik 'Daftar Ulang Windows Hello' di popup.";
+        } else if (e && e.name !== "NotAllowedError") {
+          err.textContent = "Verifikasi gagal (" + (e.name || "Error") + ").";
+        }
+      } finally {
+        helloBusy = false;
+        helloBtn.innerHTML = origHtml;
+      }
+    };
+
     const submit = async () => {
+      if (!pin.value && hasHello()) { triggerHello(); return; }
       const wait = nextTryAt - Date.now();
       if (wait > 0) { err.textContent = `Coba lagi dalam ${Math.ceil(wait / 1000)} dtk`; return; }
       if (s.pinHash && await wpsVerifyPin(pin.value, s.pinSalt, s.pinHash)) {
-        fails = 0; decoy = false; pin.value = ""; err.textContent = ""; await setLocked(false);
+        fails = 0; decoy = false; pin.value = ""; err.textContent = ""; setLocked(false);
       } else if (s.decoyEnabled && s.decoyHash && await wpsVerifyPin(pin.value, s.decoySalt, s.decoyHash)) {
-        fails = 0; decoy = true; pin.value = ""; err.textContent = ""; await setLocked(false);
+        fails = 0; decoy = true; pin.value = ""; err.textContent = ""; setLocked(false);
       } else {
         fails++;
         if (fails >= 3) nextTryAt = Date.now() + Math.min(2 ** (fails - 2) * 1000, 300000);
@@ -386,23 +402,7 @@
     pin.addEventListener("keydown", (e) => { e.stopPropagation(); if (e.key === "Enter") submit(); }, true);
     ["keyup", "keypress"].forEach((t) => pin.addEventListener(t, (e) => e.stopPropagation(), true));
 
-    shadow.getElementById("helloBtn").addEventListener("click", async () => {
-      err.textContent = "";
-      try {
-        if (await unlockKeyOnPage()) {
-          fails = 0; decoy = false; pin.value = ""; err.textContent = "";
-          await setLocked(false);
-        } else {
-          err.textContent = "Verifikasi Windows Hello gagal.";
-        }
-      } catch (e) {
-        if (s.webauthnOrigin !== "wa") {
-          err.textContent = "Kredensial lama terdeteksi. Buka PIN lalu klik 'Daftar Ulang Windows Hello' di popup.";
-        } else {
-          err.textContent = "Verifikasi dibatalkan atau gagal (" + (e.name || "Error") + ").";
-        }
-      }
-    });
+    helloBtn.addEventListener("click", triggerHello);
 
     const regErr = shadow.getElementById("regErr");
     shadow.getElementById("regConfirmBtn").addEventListener("click", async () => {
@@ -541,9 +541,10 @@
   const load = async (initial) => {
     if (!alive()) return cleanup();
     s = await ext.storage.local.get(DEFAULTS);
+    getCredId();
     if (initial && hasAuth() && s.lockOnLoad) {
       locked = true; panic = false;
-      await ext.storage.local.set({ locked: true, panic: false });
+      ext.storage.local.set({ locked: true, panic: false }).catch(() => {});
     } else {
       locked = Boolean(s.locked && hasAuth());
       panic = Boolean(s.panic);
@@ -559,7 +560,7 @@
   const onStorageChanged = () => load(false);
   const onRuntimeMessage = (m, _sender, sendResponse) => {
     if (!m || !m.wpsCmd) return;
-    if (m.wpsCmd === "ping") sendResponse({ ok: true, v: 5 });
+    if (m.wpsCmd === "ping") sendResponse({ ok: true, v: 6 });
     else if (m.wpsCmd === "getChats") sendResponse({ ok: true, chats: getVisibleChatNames() });
     else if (m.wpsCmd === "lock") { lockNow(); sendResponse({ ok: true }); }
     else if (m.wpsCmd === "panic") { togglePanic(); sendResponse({ ok: true }); }
@@ -587,7 +588,7 @@
   };
 
   window.__wpsCleanup = cleanup;
-  window.__wpsVersion = 5;
+  window.__wpsVersion = 6;
   window.__wpsGetChats = getVisibleChatNames;
   window.__wpsSync = () => load(false);
   window.__wpsLock = lockNow;

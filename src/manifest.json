@@ -25,7 +25,7 @@
     "run_at": "document_start",
     "all_frames": true
   }],
-  "web_accessible_resources": [{ "resources": ["face.html", "auth.html"], "matches": ["https://web.whatsapp.com/*"] }],
+  "web_accessible_resources": [{ "resources": ["face.html"], "matches": ["https://web.whatsapp.com/*"] }],
   "commands": {
     "toggle-privacy": {
       "suggested_key": { "default": "Alt+Z" },

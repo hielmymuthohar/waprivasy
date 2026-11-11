@@ -72,8 +72,7 @@
     "web_accessible_resources":  [
                                      {
                                          "resources":  [
-                                                           "face.html",
-                                                           "auth.html"
+                                                           "face.html"
                                                        ],
                                          "matches":  [
                                                          "https://web.whatsapp.com/*"
