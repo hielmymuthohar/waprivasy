@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="header-row">
+    <h1>Privacy Shield</h1>
+    <label class="profile-select">Profil
+      <select id="profile">
+        <option value="custom">Kustom</option>
+        <option value="kantor">Kantor</option>
+        <option value="rumah">Rumah</option>
+        <option value="publik">Tempat umum</option>
+        <option value="presentasi">Presentasi</option>
+      </select>
+    </label>
+  </div>
+
+  <label class="master"><input type="checkbox" data-key="enabled"> Aktifkan perlindungan <kbd>Alt+Z</kbd></label>
+  <fieldset>
+    <label><input type="checkbox" data-key="messages"> Pesan di chat</label>
+    <label><input type="checkbox" data-key="previews"> Preview daftar chat</label>
+    <label><input type="checkbox" data-key="media"> Media (gambar/video)</label>
+    <label><input type="checkbox" data-key="names"> Nama kontak/grup</label>
+    <label><input type="checkbox" data-key="avatars"> Foto profil</label>
+    <label><input type="checkbox" data-key="input"> Kolom ketik</label>
+  </fieldset>
+  <label><input type="checkbox" data-key="hoverReveal"> Tampilkan saat kursor di atasnya</label>
+  <label><input type="checkbox" data-key="blurOnAway"> Blur saat jendela kehilangan fokus</label>
+  <label><input type="checkbox" data-key="blurOnShare"> Blur saat berbagi layar di Meet/Teams/Zoom web</label>
+  <label><input type="checkbox" data-key="presentation"> Mode presentasi (nama &amp; foto selalu samar)</label>
+  <label class="range">Kekuatan blur <input type="range" min="2" max="20" data-key="blur"></label>
+
+  <div class="sec-head">
+    <h2>Cakupan chat</h2>
+    <span id="profileBadge" class="pill-badge">Profil: Kustom</span>
+  </div>
+  <div class="scope-tabs">
+    <button type="button" id="scopeAll" class="tab-btn">Semua chat</button>
+    <button type="button" id="scopeSelected" class="tab-btn">Hanya chat tertentu</button>
+  </div>
+
+  <div id="chatPickerPanel" class="picker-panel" style="display:none">
+    <div class="sub-label">Chat yang di-blur pada profil ini:</div>
+    <div id="selectedChips" class="chip-list"></div>
+
+    <div class="row">
+      <input id="chatInput" type="text" placeholder="Cari atau ketik nama kontak/grup…" autocomplete="off">
+      <button type="button" id="addChatBtn">+ Tambah</button>
+    </div>
+
+    <div class="sub-head">
+      <span>Pilih cepat kontak/grup dari WhatsApp:</span>
+      <button type="button" id="refreshChatsBtn" class="link-btn" title="Muat ulang daftar kontak dari tab WhatsApp">↻ Muat ulang</button>
+    </div>
+    <div id="waChatList" class="wa-list"></div>
+  </div>
+
+  <h2>Kunci &amp; Keamanan</h2>
+  <div class="action-grid">
+    <button type="button" id="lockNow" class="action-btn">🔒 Kunci <kbd>Alt+L</kbd></button>
+    <button type="button" id="panic" class="action-btn">🚨 Panic <kbd>Alt+X</kbd></button>
+  </div>
+
+  <!-- Kartu PIN -->
+  <div class="sec-card">
+    <div class="card-head">
+      <span class="card-title">🔑 Kunci PIN</span>
+      <span id="pinBadge" class="status-pill off">Belum diatur</span>
+    </div>
+    <div class="stack-form">
+      <input id="oldPin" type="password" inputmode="numeric" placeholder="Masukkan PIN saat ini" autocomplete="off" style="display:none">
+      <div class="row">
+        <input id="pin" type="password" inputmode="numeric" placeholder="PIN baru (4–12 digit)" autocomplete="off">
+        <button type="button" id="setPin" class="primary-btn">Simpan</button>
+        <button type="button" id="clearPin" class="ghost-danger-btn" style="display:none">Hapus</button>
+      </div>
+    </div>
+    <div id="pinStatus" class="note"></div>
+    <div id="deletePinBox" class="confirm-box" style="display:none">
+      <div class="sub-label">Konfirmasi hapus PIN:</div>
+      <div class="row">
+        <input id="confirmDelPin" type="password" inputmode="numeric" placeholder="PIN saat ini" autocomplete="off">
+        <button type="button" id="confirmDelBtn" class="danger-btn">Hapus</button>
+        <button type="button" id="cancelDelBtn">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Kartu Windows Hello / Fingerprint -->
+  <div class="sec-card">
+    <div class="card-head">
+      <span class="card-title">👆 Windows Hello / Sidik Jari</span>
+      <span id="helloBadge" class="status-pill off">Belum terhubung</span>
+    </div>
+    <div id="helloDesc" class="note">Gunakan sidik jari atau wajah di laptop Anda untuk membuka kunci.</div>
+    <div class="row">
+      <button type="button" id="regKey" class="full-btn">+ Sambungkan Windows Hello</button>
+      <button type="button" id="clearKey" class="ghost-danger-btn" style="display:none">Putuskan</button>
+    </div>
+  </div>
+
+  <label><input type="checkbox" data-key="lockOnLoad"> Kunci otomatis saat WhatsApp Web dibuka</label>
+  <label>Kunci otomatis saat idle (menit, 0 = mati)
+    <input type="number" min="0" max="240" data-key="idleMinutes" class="num"></label>
+
+  <h2>Deteksi wajah (opsional)</h2>
+  <label><input type="checkbox" data-key="faceDetect" id="faceDetect"> Blur otomatis jika ada lebih dari satu wajah</label>
+  <button id="faceSetup" class="full-btn">Atur kamera &amp; persetujuan…</button>
+  <div class="note">Diproses lokal, tanpa merekam atau mengirim gambar. Kamera hanya aktif dengan persetujuan Anda.</div>
+
+  <h2>Decoy mode (opsional)</h2>
+  <label><input type="checkbox" data-key="decoyEnabled"> Aktifkan PIN kedua</label>
+  <div class="stack-form">
+    <input id="decoyAuthPin" type="password" inputmode="numeric" placeholder="Masukkan PIN utama" autocomplete="off">
+    <div class="row">
+      <input id="decoyPin" type="password" inputmode="numeric" placeholder="PIN decoy baru (4–12 digit)" autocomplete="off">
+      <button id="setDecoy" class="primary-btn">Simpan</button>
+    </div>
+  </div>
+  <div id="decoyStatus" class="note">PIN decoy membuka WhatsApp dengan isi chat yang tetap tersamar.</div>
+
+  <script src="pin.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

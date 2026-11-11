@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <title>Daftarkan Windows Hello</title>
+  <link rel="stylesheet" href="popup.css">
+  <style>body { width: auto; max-width: 480px; margin: 40px auto; font-size: 15px; } button { padding: 8px 16px; }</style>
+</head>
+<body>
+  <h1>Windows Hello / sidik jari</h1>
+  <p>Daftarkan metode buka kunci dari perangkat ini. Data biometrik tetap di sistem operasi dan tidak pernah dibaca extension; extension hanya menyimpan kunci publik.</p>
+  <p><button id="go">Daftarkan</button> <button id="clear">Hapus pendaftaran</button></p>
+  <p id="msg" class="note"></p>
+  <script src="pin.js"></script>
+  <script src="webauthn.js"></script>
+  <script src="auth-setup.js"></script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+/* Selector WhatsApp sering berubah: semua dikumpulkan di sini agar mudah diperbarui.
+   [data-wps-private] dipasang oleh content.js pada #main dan baris chat yang termasuk aturan privasi. */
+:root { --wps-blur: 8px; }
+
+html[data-wps-enabled][data-wps-messages] #main[data-wps-private] [data-testid="msg-container"],
+html[data-wps-enabled][data-wps-messages] #main[data-wps-private] .message-in,
+html[data-wps-enabled][data-wps-messages] #main[data-wps-private] .message-out,
+html[data-wps-enabled][data-wps-messages] #main[data-wps-private] [data-id^="true_"],
+html[data-wps-enabled][data-wps-messages] #main[data-wps-private] [data-id^="false_"],
+html[data-wps-enabled][data-wps-messages] #main[data-wps-private] [role="row"] .copyable-text,
+html[data-wps-enabled][data-wps-previews] #pane-side [data-wps-private] [data-wps-role="preview"],
+html[data-wps-enabled][data-wps-previews] #pane-side [data-wps-private] [data-testid="cell-frame-secondary"],
+html[data-wps-enabled][data-wps-names] #pane-side [data-wps-private] [data-wps-role="title"],
+html[data-wps-enabled][data-wps-names] #pane-side [data-wps-private] [data-testid="cell-frame-title"],
+html[data-wps-enabled][data-wps-names] #main[data-wps-private] header span[dir="auto"],
+html[data-wps-enabled][data-wps-names] #main[data-wps-private] header span[title],
+html[data-wps-enabled][data-wps-avatars] #pane-side [data-wps-private] img,
+html[data-wps-enabled][data-wps-avatars] #main[data-wps-private] header img,
+html[data-wps-enabled][data-wps-media] #main[data-wps-private] img[src^="blob:"],
+html[data-wps-enabled][data-wps-media] #main[data-wps-private] video,
+html[data-wps-enabled][data-wps-media] #main[data-wps-private] canvas,
+html[data-wps-enabled][data-wps-input] #main[data-wps-private] footer [contenteditable="true"] {
+  filter: blur(var(--wps-blur));
+  transition: filter 0.15s ease;
+}
+
+html[data-wps-enabled][data-wps-hover-reveal] #main [data-testid="msg-container"]:hover,
+html[data-wps-enabled][data-wps-hover-reveal] #main .message-in:hover,
+html[data-wps-enabled][data-wps-hover-reveal] #main .message-out:hover,
+html[data-wps-enabled][data-wps-hover-reveal] #main [data-id^="true_"]:hover,
+html[data-wps-enabled][data-wps-hover-reveal] #main [data-id^="false_"]:hover,
+html[data-wps-enabled][data-wps-hover-reveal] #main [role="row"] .copyable-text:hover,
+html[data-wps-enabled][data-wps-hover-reveal] #main header span[dir="auto"]:hover,
+html[data-wps-enabled][data-wps-hover-reveal] #main header span[title]:hover,
+html[data-wps-enabled][data-wps-hover-reveal] #main header img:hover,
+html[data-wps-enabled][data-wps-hover-reveal] #main img[src^="blob:"]:hover,
+html[data-wps-enabled][data-wps-hover-reveal] #main video:hover,
+html[data-wps-enabled][data-wps-hover-reveal] #main canvas:hover,
+html[data-wps-enabled][data-wps-hover-reveal] #main footer [contenteditable="true"]:hover,
+html[data-wps-enabled][data-wps-hover-reveal] #main footer [contenteditable="true"]:focus,
+html[data-wps-enabled][data-wps-hover-reveal] #pane-side [data-wps-private]:hover :is(img, [data-wps-role], [data-testid="cell-frame-secondary"], [data-testid="cell-frame-title"]) {
+  filter: none;
+}
+
+/* Blur penuh saat jendela kehilangan fokus. */
+html[data-wps-enabled][data-wps-blur-away][data-wps-away] #app { filter: blur(24px); }
+/* Ada tab lain yang sedang berbagi layar. */
+html[data-wps-enabled][data-wps-sharing] #app { filter: blur(24px); }
+/* Mode presentasi: nama dan foto selalu samar, tanpa reveal saat hover. */
+html[data-wps-enabled][data-wps-presentation] #pane-side [data-wps-role="title"],
+html[data-wps-enabled][data-wps-presentation] #pane-side [data-testid="cell-frame-title"],
+html[data-wps-enabled][data-wps-presentation] #pane-side img,
+html[data-wps-enabled][data-wps-presentation] #main header span[dir="auto"],
+html[data-wps-enabled][data-wps-presentation] #main header span[title],
+html[data-wps-enabled][data-wps-presentation] #main header img {
+  filter: blur(10px) !important;
+}
+/* Terkunci atau panic: sembunyikan seluruh aplikasi. */
+html[data-wps-locked] #app { visibility: hidden !important; pointer-events: none !important; }
+
+/* Ada lebih dari satu wajah di depan kamera. */
+html[data-wps-enabled][data-wps-face-alert] #app { filter: blur(24px); }
+/* Mode decoy (PIN kedua): isi chat selalu tersamar, tanpa reveal. */
+html[data-wps-decoy] #pane-side, html[data-wps-decoy] #main { filter: blur(14px) !important; }

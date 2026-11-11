@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <title>Deteksi wajah: persetujuan</title>
+  <link rel="stylesheet" href="popup.css">
+  <style>body { width: auto; max-width: 520px; margin: 40px auto; font-size: 15px; } button { padding: 8px 16px; }</style>
+</head>
+<body>
+  <h1>Deteksi wajah orang lain (opsional)</h1>
+  <p>Fitur ini memakai kamera untuk menghitung jumlah wajah di depan layar. Jika ada lebih dari satu wajah, WhatsApp Web otomatis di-blur.</p>
+  <ul>
+    <li>Pemrosesan 100% di komputer Anda, model dijalankan lokal.</li>
+    <li>Gambar kamera tidak disimpan, tidak direkam, dan tidak dikirim ke mana pun. Extension tidak punya izin koneksi keluar.</li>
+    <li>Kamera hanya menyala saat tab WhatsApp Web terbuka dan fitur aktif. Lampu kamera akan menyala, dan lencana "Kamera aktif" tampil di halaman.</li>
+    <li>Bisa dimatikan kapan saja di popup, dan izin kamera bisa dicabut di pengaturan browser.</li>
+  </ul>
+  <label><input type="checkbox" id="agree"> Saya mengerti dan setuju kamera dipakai untuk deteksi wajah.</label>
+  <p><button id="go" disabled>Izinkan kamera dan aktifkan</button></p>
+  <p id="msg" class="note"></p>
+  <script src="camera-setup.js"></script>
+</body>
+</html>

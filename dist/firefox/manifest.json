@@ -1,0 +1,120 @@
+{
+    "manifest_version":  3,
+    "name":  "Privacy Shield for WA Web",
+    "version":  "2.0.0",
+    "description":  "Blur pesan, preview, media, nama, dan foto di WhatsApp Web. 100% lokal, tanpa koneksi keluar.",
+    "permissions":  [
+                        "storage",
+                        "scripting"
+                    ],
+    "host_permissions":  [
+                             "https://web.whatsapp.com/*"
+                         ],
+    "icons":  {
+                  "16":  "icons/icon16.png",
+                  "48":  "icons/icon48.png",
+                  "128":  "icons/icon128.png"
+              },
+    "action":  {
+                   "default_popup":  "popup.html",
+                   "default_icon":  {
+                                        "16":  "icons/icon16.png",
+                                        "48":  "icons/icon48.png"
+                                    }
+               },
+    "background":  {
+                       "scripts":  [
+                                       "background.js"
+                                   ]
+                   },
+    "content_scripts":  [
+                            {
+                                "matches":  [
+                                                "https://web.whatsapp.com/*"
+                                            ],
+                                "js":  [
+                                           "pin.js",
+                                           "content.js"
+                                       ],
+                                "css":  [
+                                            "content.css"
+                                        ],
+                                "run_at":  "document_start"
+                            },
+                            {
+                                "matches":  [
+                                                "https://meet.google.com/*",
+                                                "https://teams.microsoft.com/*",
+                                                "https://teams.live.com/*",
+                                                "https://*.zoom.us/*"
+                                            ],
+                                "js":  [
+                                           "share-main.js"
+                                       ],
+                                "world":  "MAIN",
+                                "run_at":  "document_start",
+                                "all_frames":  true
+                            },
+                            {
+                                "matches":  [
+                                                "https://meet.google.com/*",
+                                                "https://teams.microsoft.com/*",
+                                                "https://teams.live.com/*",
+                                                "https://*.zoom.us/*"
+                                            ],
+                                "js":  [
+                                           "share-relay.js"
+                                       ],
+                                "run_at":  "document_start",
+                                "all_frames":  true
+                            }
+                        ],
+    "web_accessible_resources":  [
+                                     {
+                                         "resources":  [
+                                                           "face.html",
+                                                           "auth.html"
+                                                       ],
+                                         "matches":  [
+                                                         "https://web.whatsapp.com/*"
+                                                     ]
+                                     }
+                                 ],
+    "commands":  {
+                     "toggle-privacy":  {
+                                            "suggested_key":  {
+                                                                  "default":  "Alt+Z"
+                                                              },
+                                            "description":  "Aktif/nonaktifkan blur"
+                                        },
+                     "lock-now":  {
+                                      "suggested_key":  {
+                                                            "default":  "Alt+L"
+                                                        },
+                                      "description":  "Kunci sekarang"
+                                  },
+                     "panic":  {
+                                   "suggested_key":  {
+                                                         "default":  "Alt+X"
+                                                     },
+                                   "description":  "Panic: tampilkan layar palsu"
+                               }
+                 },
+    "content_security_policy":  {
+                                    "extension_pages":  "script-src \u0027self\u0027 \u0027wasm-unsafe-eval\u0027; object-src \u0027self\u0027; connect-src \u0027self\u0027"
+                                },
+    "browser_specific_settings":  {
+                                      "gecko":  {
+                                                    "strict_min_version":  "128.0",
+                                                    "id":  "privacy-shield-wa@example.local",
+                                                    "data_collection_permissions":  {
+                                                                                        "optional":  [
+                                                                                                         "cameraData"
+                                                                                                     ],
+                                                                                        "required":  [
+                                                                                                         "none"
+                                                                                                     ]
+                                                                                    }
+                                                }
+                                  }
+}
