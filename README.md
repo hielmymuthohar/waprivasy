@@ -21,7 +21,10 @@ Catatan: ini lapisan tampilan (blur), bukan enkripsi. Lihat [PRIVACY.md](PRIVACY
 - **Proteksi Cerdas Tambahan**:
   - **Auto-Blur Saat Jendela Kehilangan Fokus**: Menyamarkan layar saat beralih aplikasi.
   - **Deteksi Berbagi Layar**: Otomatis menyamarkan WhatsApp Web saat Anda membagikan layar di Google Meet, Microsoft Teams, atau Zoom Web.
-  - **Deteksi Wajah Lokal (Anti-Shoulder Surfing)**: Memanfaatkan webcam dan AI lokal on-device (Google MediaPipe BlazeFace) untuk mendeteksi keberadaan orang lain di sekitar Anda. Jika terdeteksi ≥ 2 wajah, layar langsung tersamar penuh secara otomatis tanpa memandang profil aktif.
+  - **Deteksi Wajah Lokal (Anti-Shoulder Surfing) Fleksibel**: Memanfaatkan webcam dan AI lokal on-device (Google MediaPipe BlazeFace) untuk mendeteksi keberadaan orang lain di sekitar Anda:
+    - *Mode Hanya di WA Web*: Kamera hanya aktif saat tab WhatsApp Web dibuka, dan otomatis tidur/mati saat Anda berpindah tab di browser atau keluar browser.
+    - *Mode Semua Tab Browser*: Menyamarkan tab aktif manapun di browser (frosted glass blur + badge elegan) jika terdeteksi > 1 wajah. Kamera otomatis mati saat Anda beralih ke aplikasi desktop lain di luar browser (dengan toleransi responsif 500ms).
+- **Desain Modern & Zero Emojis**: 100% menggunakan aset SVG inline kustom berbasis vektor, sistem token desain modern (*shadcn/ui* & *Tailwind*), toggle switch mulus, dan badge status informatif tanpa emoji.
 
 ## Build dan pasang
 ```powershell
