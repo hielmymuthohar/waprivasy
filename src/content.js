@@ -465,18 +465,6 @@
     if (!s.faceDetect) {
       cam.classList.remove("on");
       cam.style.display = "none";
-    } else if (s.faceScope === "all") {
-      cam.classList.add("on");
-      cam.style.display = "flex";
-      cam.style.pointerEvents = "none";
-      cam.style.cursor = "default";
-      if (s.faceAlert) {
-        cam.innerHTML = ICONS.alert + " <span>" + (s.faceCount || 2) + " wajah (Layar tersamar)</span>";
-        cam.style.color = "#ffb74d";
-      } else {
-        cam.innerHTML = ICONS.camera + " <span>Dipantau di semua tab</span>";
-        cam.style.color = "#8696a0";
-      }
     } else {
       const active = isTabActive();
       const showCam = Boolean(active && (faceFrame || camError || camStream));
@@ -494,7 +482,8 @@
           cam.style.color = "#ffb74d";
           cam.onclick = null;
         } else if (camStream) {
-          cam.innerHTML = ICONS.camera + " <span>" + lastFaceCount + " wajah</span>";
+          const modeTag = s.faceScope === "all" ? " (Semua tab)" : "";
+          cam.innerHTML = ICONS.camera + " <span>" + lastFaceCount + " wajah" + modeTag + "</span>";
           cam.style.color = "#e9edef";
           cam.onclick = null;
         } else {
@@ -679,44 +668,70 @@
   };
 
   let camAwayTimer = null;
-  const isTabActive = () => !document.hidden && (document.hasFocus() || popupOpen);
+  let browserFocused = true;
+
+  const isTabActive = () => {
+    if (s.faceScope === "all") {
+      // Di mode semua tab, selama jendela browser Chrome aktif/difokuskan, sensor berjalan
+      return browserFocused;
+    }
+    // Di mode hanya WA, tab WA Web harus aktif di depan mata dan fokus
+    return !document.hidden && (document.hasFocus() || popupOpen);
+  };
 
   const evaluateCameraPower = () => {
     if (!alive()) return;
-    if (s.faceScope === "all") {
-      stopCameraStream();
-      setFlag("data-wps-face-alert", Boolean(s.faceDetect && s.faceAlert));
-      render();
-      return;
-    }
     if (!s.faceDetect || !s.faceConsent) {
-      stopCameraStream();
-      return;
-    }
-    if (document.hidden) {
       if (camAwayTimer) { clearTimeout(camAwayTimer); camAwayTimer = null; }
       stopCameraStream();
-    } else if (!document.hasFocus() && !popupOpen) {
-      if (!camAwayTimer) {
-        camAwayTimer = setTimeout(() => {
-          camAwayTimer = null;
-          if (!isTabActive()) stopCameraStream();
-        }, 600);
+      return;
+    }
+
+    if (s.faceScope === "all") {
+      // MODE SEMUA TAB BROWSER:
+      // Kamera tetap aktif selama berada di dalam browser Chrome (meski pindah tab lain).
+      // HANYA mati jika jendela browser kehilangan fokus / minimize (500ms debounce).
+      if (!browserFocused) {
+        if (!camAwayTimer) {
+          camAwayTimer = setTimeout(() => {
+            camAwayTimer = null;
+            if (!browserFocused) {
+              stopCameraStream();
+            }
+          }, 500);
+        }
+      } else {
+        if (camAwayTimer) { clearTimeout(camAwayTimer); camAwayTimer = null; }
+        if (!camStream) {
+          startCameraStream();
+        }
       }
     } else {
-      if (camAwayTimer) { clearTimeout(camAwayTimer); camAwayTimer = null; }
-      if (!camStream) startCameraStream();
+      // MODE HANYA DI WA WEB:
+      // Kamera mati seketika jika tab WA Web pindah ke background ATAU jendela browser kehilangan fokus.
+      if (document.hidden) {
+        if (camAwayTimer) { clearTimeout(camAwayTimer); camAwayTimer = null; }
+        stopCameraStream();
+      } else if (!document.hasFocus() && !popupOpen) {
+        if (!camAwayTimer) {
+          camAwayTimer = setTimeout(() => {
+            camAwayTimer = null;
+            if (document.hidden || (!document.hasFocus() && !popupOpen)) {
+              stopCameraStream();
+            }
+          }, 500);
+        }
+      } else {
+        if (camAwayTimer) { clearTimeout(camAwayTimer); camAwayTimer = null; }
+        if (!camStream) {
+          startCameraStream();
+        }
+      }
     }
   };
 
   const syncFace = () => {
     if (!alive()) return;
-    if (s.faceScope === "all") {
-      stopCameraStream();
-      setFlag("data-wps-face-alert", Boolean(s.faceDetect && s.faceAlert));
-      render();
-      return;
-    }
     const want = Boolean(s.faceDetect && s.faceConsent);
     if (want) {
       if (!faceFrame) {
@@ -750,12 +765,18 @@
             setFlag("data-wps-face-alert", true);
             toast(ICONS.alert + " <span>Terdeteksi " + v + " wajah! Seluruh chat disamarkan otomatis.</span>", true);
           }
+          if (s.faceScope === "all") {
+            ext.storage.local.set({ faceAlert: true, faceCount: v }).catch(() => {});
+          }
         } else {
           faceClear++;
           faceHits = 0;
           if (faceClear >= 3 && faceAlertActive) {
             faceAlertActive = false;
             setFlag("data-wps-face-alert", false);
+          }
+          if (s.faceScope === "all" && faceClear >= 3) {
+            ext.storage.local.set({ faceAlert: false, faceCount: v }).catch(() => {});
           }
         }
         render();
@@ -843,6 +864,11 @@
     else if (m.wpsCmd === "lock") { lockNow(); sendResponse({ ok: true }); }
     else if (m.wpsCmd === "panic") { togglePanic(); sendResponse({ ok: true }); }
     else if (m.wpsCmd === "registerHello") { startRegisterHello(); sendResponse({ ok: true }); }
+    else if (m.wpsCmd === "browserFocus") {
+      browserFocused = Boolean(m.active);
+      evaluateCameraPower();
+      sendResponse({ ok: true });
+    }
     else if (m.wpsCmd === "popup") {
       popupOpen = Boolean(m.open);
       setTimeout(away, popupOpen ? 0 : 150);

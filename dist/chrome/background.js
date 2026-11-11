@@ -111,7 +111,15 @@ const syncOffscreenState = async () => {
     const { faceDetect = false, faceConsent = false, faceScope = "wa" } =
       await ext.storage.local.get(["faceDetect", "faceConsent", "faceScope"]);
     if (faceDetect && faceConsent && faceScope === "all") {
-      await setupOffscreen();
+      // Cek apakah ada tab WhatsApp Web yang sedang terbuka
+      const waTabs = await ext.tabs.query({ url: "https://web.whatsapp.com/*" });
+      if (waTabs.length > 0) {
+        // WhatsApp Web aktif dan bertindak sebagai sensor kamera utama
+        await closeOffscreen();
+      } else {
+        // Jika WhatsApp Web ditutup, jalankan offscreen document sebagai sensor independen
+        await setupOffscreen();
+      }
     } else {
       await closeOffscreen();
       await ext.storage.local.set({ faceAlert: false });
@@ -119,22 +127,21 @@ const syncOffscreenState = async () => {
   } catch {}
 };
 
-// Auto-mati saat jendela browser diminimize atau pengguna beralih ke aplikasi desktop lain
+// Auto-mati saat jendela browser diminimize atau pengguna beralih ke aplikasi desktop lain (500ms responsif)
 if (typeof chrome !== "undefined" && chrome.windows) {
   chrome.windows.onFocusChanged.addListener(async (windowId) => {
     try {
-      const { faceDetect = false, faceScope = "wa" } = await ext.storage.local.get(["faceDetect", "faceScope"]);
-      if (!faceDetect || faceScope !== "all") return;
-      if (windowId === chrome.windows.WINDOW_ID_NONE) {
-        // Browser tidak aktif / diminimize / beralih ke app luar
-        ext.runtime.sendMessage({ type: "PAUSE_CAMERA" }).catch(() => {});
-      } else {
-        // Kembali aktif di jendela browser
-        ext.runtime.sendMessage({ type: "RESUME_CAMERA" }).catch(() => {});
-      }
+      const isBrowserActive = windowId !== chrome.windows.WINDOW_ID_NONE;
+      // Kirim status fokus jendela ke tab WhatsApp Web
+      notifyWaTabs({ wpsCmd: "browserFocus", active: isBrowserActive }).catch(() => {});
+      // Kirim status ke offscreen document jika aktif
+      ext.runtime.sendMessage({ type: isBrowserActive ? "RESUME_CAMERA" : "PAUSE_CAMERA" }).catch(() => {});
     } catch {}
   });
 }
+
+ext.tabs.onCreated.addListener(() => syncOffscreenState());
+ext.tabs.onRemoved.addListener(() => setTimeout(syncOffscreenState, 500));
 
 ext.storage.onChanged.addListener((changes) => {
   if (changes.faceDetect || changes.faceScope || changes.faceConsent) {
