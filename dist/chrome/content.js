@@ -55,7 +55,7 @@
     return false;
   };
 
-  // Baca teks lengkap termasuk alt emoji <img alt="🦢"> bila atribut title tidak ada.
+  // Baca teks lengkap termasuk atribut alt bila atribut title tidak ada.
   const readText = (el) => {
     if (!el) return "";
     const t = el.getAttribute && el.getAttribute("title");
@@ -283,36 +283,53 @@
     return auth.length >= 33 && (auth[32] & 0x05) === 0x05;
   };
 
+  /* ---------- SVG Icons ---------- */
+  const ICONS = {
+    lock: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
+    fingerprint: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12C2 6.5 6.5 2 12 2a10 10 0 0 1 8 4"/><path d="M5 19.5C5.5 18 6 15 6 12c0-.7.1-1.4.3-2"/><path d="M8.6 15.5c.3-1 .4-2.2.4-3.5 0-1.7.7-3.2 1.8-4.2"/><path d="M12 7c2.8 0 5 2.2 5 5 0 2.2-.6 4.3-1.6 6"/><path d="M15 12c0 3.5-.8 6.5-2.2 8.5"/><path d="M19 12c0 2-.4 3.9-1 5.5"/></svg>`,
+    camera: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>`,
+    alert: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+    check: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+    spinner: `<svg class="spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>`,
+    sheet: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>`,
+  };
+
   /* ---------- Overlay (Shadow DOM) ---------- */
   const STYLE = `
     :host { all: initial; position: fixed; inset: 0; z-index: 2147483647; pointer-events: none; }
-    .wrap { position: fixed; inset: 0; z-index: 2147483647; display: none; pointer-events: auto; font: 14px system-ui, -apple-system, sans-serif; }
+    .wrap { position: fixed; inset: 0; z-index: 2147483647; display: none; pointer-events: auto; font: 13.5px system-ui, -apple-system, sans-serif; }
     .wrap.on { display: flex; }
     .lock { background: radial-gradient(circle at center, #111b21 0%, #0b141a 100%); color: #e9edef; align-items: center; justify-content: center; flex-direction: column; padding: 20px; }
-    .card { background: #182229; border: 1px solid #2a3942; border-radius: 16px; padding: 28px 26px; width: 100%; max-width: 340px; box-shadow: 0 12px 36px rgba(0,0,0,.55); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; }
-    .icon-circle { width: 52px; height: 52px; border-radius: 50%; background: rgba(37, 211, 102, 0.14); color: #25d366; display: flex; align-items: center; justify-content: center; font-size: 24px; }
-    .card h2 { margin: 0; font-size: 18px; font-weight: 600; color: #e9edef; }
+    .card { background: #182229; border: 1px solid #2a3942; border-radius: 16px; padding: 28px 26px; width: 100%; max-width: 340px; box-shadow: 0 12px 36px rgba(0,0,0,.55); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; box-sizing: border-box; }
+    .icon-circle { width: 54px; height: 54px; border-radius: 50%; background: rgba(37, 211, 102, 0.12); color: #25d366; display: flex; align-items: center; justify-content: center; }
+    .icon-circle svg { width: 26px; height: 26px; }
+    .card h2 { margin: 0; font-size: 17.5px; font-weight: 600; color: #e9edef; }
     .sub { margin: -6px 0 2px; font-size: 12.5px; color: #8696a0; line-height: 1.4; }
     .pinRow { display: flex; flex-direction: column; width: 100%; gap: 10px; }
     .card input { width: 100%; box-sizing: border-box; padding: 11px 14px; border-radius: 10px; border: 1px solid #2a3942; background: #202c33; color: #fff; text-align: center; font-size: 16px; letter-spacing: 3px; outline: none; transition: border-color .15s; }
     .card input::placeholder { letter-spacing: normal; color: #8696a0; font-size: 13.5px; }
     .card input:focus { border-color: #25d366; }
-    .btn-primary { width: 100%; padding: 11px 18px; border: 0; border-radius: 10px; background: #25d366; color: #0b141a; font-weight: 600; font-size: 14px; cursor: pointer; transition: filter .15s; }
+    .btn-primary { width: 100%; padding: 11px 18px; border: 0; border-radius: 10px; background: #25d366; color: #0b141a; font-weight: 600; font-size: 14px; cursor: pointer; transition: filter .15s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
     .btn-primary:hover { filter: brightness(1.06); }
     .divider { display: flex; align-items: center; width: 100%; gap: 10px; color: #8696a0; font-size: 11.5px; margin: 2px 0; }
     .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: #2a3942; }
-    .btn-hello { width: 100%; padding: 10px 16px; border: 1px solid #25d366; border-radius: 10px; background: rgba(37, 211, 102, 0.1); color: #25d366; font-weight: 600; font-size: 13.5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background .15s; }
-    .btn-hello:hover { background: rgba(37, 211, 102, 0.18); }
+    .btn-hello { width: 100%; padding: 10px 16px; border: 1px solid rgba(37, 211, 102, 0.4); border-radius: 10px; background: rgba(37, 211, 102, 0.08); color: #25d366; font-weight: 600; font-size: 13.5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background .15s, border-color .15s; }
+    .btn-hello:hover { background: rgba(37, 211, 102, 0.16); border-color: #25d366; }
     .btn-ghost { width: 100%; padding: 9px 16px; border: 1px solid #2a3942; border-radius: 10px; background: transparent; color: #8696a0; font-weight: 500; font-size: 13px; cursor: pointer; }
     .btn-ghost:hover { background: #202c33; color: #e9edef; }
     .err { color: #ff8a80; font-size: 12.5px; min-height: 18px; }
-    .badge { position: fixed; right: 12px; bottom: 12px; z-index: 2147483647; display: none; pointer-events: none;
-      background: #182229; border: 1px solid #2a3942; color: #e9edef; padding: 8px 14px; border-radius: 12px; font: 12.5px system-ui, sans-serif; box-shadow: 0 4px 14px rgba(0,0,0,.45); }
-    .badge.on { display: block; }
+    .badge { position: fixed; right: 16px; bottom: 16px; z-index: 2147483647; display: none; pointer-events: none;
+      background: #182229; border: 1px solid #2a3942; color: #e9edef; padding: 7px 13px; border-radius: 9999px; font: 12px system-ui, sans-serif; box-shadow: 0 4px 14px rgba(0,0,0,.45); align-items: center; gap: 7px; }
+    .badge.on { display: flex; }
+    .badge svg { flex-shrink: 0; }
     .fake { background: #fff; color: #222; flex-direction: column; }
-    .fake .bar { background: #f1f3f4; padding: 10px 16px; border-bottom: 1px solid #ddd; font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
+    .fake .bar { background: #f1f3f4; padding: 10px 16px; border-bottom: 1px solid #ddd; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
+    .fake .bar .title { display: flex; align-items: center; gap: 8px; font-weight: 500; color: #1f1f1f; }
+    .fake .bar .title svg { color: #107c41; }
     .fake .hint { color: #777; font-size: 12px; }
     .fake .grid { flex: 1; background-image: linear-gradient(#e0e0e0 1px, transparent 1px), linear-gradient(90deg, #e0e0e0 1px, transparent 1px); background-size: 100px 24px; }
+    .spin { animation: wps-spin 0.8s linear infinite; }
+    @keyframes wps-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   `;
   const buildOverlay = () => {
     const old = document.getElementById("wps-overlay-host");
@@ -323,7 +340,7 @@
     shadow.innerHTML = `<style>${STYLE}</style>
       <div class="wrap lock" id="lock">
         <div class="card">
-          <div class="icon-circle">🔒</div>
+          <div class="icon-circle">${ICONS.lock}</div>
           <h2>Privacy Shield Terkunci</h2>
           <p class="sub" id="lockSub">Masukkan PIN atau gunakan Windows Hello untuk membuka kembali WhatsApp Web.</p>
           <div class="pinRow" id="pinRow">
@@ -332,14 +349,14 @@
           </div>
           <div class="divider" id="helloDiv" style="display:none">atau</div>
           <button class="btn-hello" id="helloBtn" style="display:none">
-            <span>👆</span><span>Buka dengan Windows Hello / Sidik Jari</span>
+            ${ICONS.fingerprint}<span>Buka dengan Windows Hello / Sidik Jari</span>
           </button>
           <div class="err" id="err"></div>
         </div>
       </div>
       <div class="wrap lock" id="regModal">
         <div class="card">
-          <div class="icon-circle">👆</div>
+          <div class="icon-circle">${ICONS.fingerprint}</div>
           <h2>Sambungkan Windows Hello</h2>
           <p class="sub">Klik tombol di bawah lalu verifikasi sidik jari, wajah, atau PIN Windows Anda.</p>
           <button class="btn-primary" id="regConfirmBtn">Verifikasi Windows Hello Sekarang</button>
@@ -348,9 +365,12 @@
         </div>
       </div>
       <div class="badge" id="cam"></div>
-      <div class="badge" id="toast" style="bottom:48px"></div>
+      <div class="badge" id="toast" style="bottom:52px"></div>
       <div class="wrap fake" id="fake">
-        <div class="bar"><span>Spreadsheet tanpa judul</span><span class="hint">Tekan Alt+X untuk kembali</span></div>
+        <div class="bar">
+          <span class="title">${ICONS.sheet}<span>Spreadsheet tanpa judul</span></span>
+          <span class="hint">Tekan Alt+X untuk kembali</span>
+        </div>
         <div class="grid"></div>
       </div>`;
     root.appendChild(host);
@@ -364,7 +384,7 @@
       helloBusy = true;
       err.textContent = "";
       const origHtml = helloBtn.innerHTML;
-      helloBtn.innerHTML = "<span>⏳</span><span>Memverifikasi Windows Hello...</span>";
+      helloBtn.innerHTML = ICONS.spinner + "<span>Memverifikasi Windows Hello...</span>";
       try {
         if (await unlockKeyOnPage()) {
           fails = 0; decoy = false; pin.value = ""; err.textContent = "";
@@ -411,7 +431,7 @@
         await registerKeyOnPage();
         registeringKey = false;
         render();
-        toast("✓ Windows Hello / sidik jari berhasil terhubung!");
+        toast(ICONS.check + " <span>Windows Hello / sidik jari berhasil terhubung!</span>");
       } catch (e) {
         regErr.textContent = "Gagal mendaftarkan (" + (e.name || e) + "). Pastikan Windows Hello aktif di perangkat ini.";
       }
@@ -448,21 +468,21 @@
     if (!s.faceDetect) {
       cam.style.display = "none";
     } else {
-      cam.style.display = showCam ? "block" : "none";
+      cam.style.display = showCam ? "flex" : "none";
       if (camError) {
-        cam.textContent = "⚠️ " + camError + " (Klik untuk coba lagi)";
+        cam.innerHTML = ICONS.alert + " <span>" + camError + " (Klik untuk coba lagi)</span>";
         cam.style.color = "#ff8a80";
         cam.onclick = () => startCameraStream();
       } else if (faceAlertActive || lastFaceCount >= 2) {
-        cam.textContent = "⚠️ " + lastFaceCount + " wajah (Layar tersamar)";
+        cam.innerHTML = ICONS.alert + " <span>" + lastFaceCount + " wajah (Layar tersamar)</span>";
         cam.style.color = "#ffb74d";
         cam.onclick = null;
       } else if (camStream) {
-        cam.textContent = "📷 " + lastFaceCount + " wajah";
+        cam.innerHTML = ICONS.camera + " <span>" + lastFaceCount + " wajah</span>";
         cam.style.color = "#e9edef";
         cam.onclick = null;
       } else {
-        cam.textContent = "📷 Memulai kamera...";
+        cam.innerHTML = ICONS.camera + " <span>Memulai kamera...</span>";
         cam.style.color = "#8696a0";
         cam.onclick = null;
       }
@@ -476,15 +496,17 @@
     render();
     if (alive()) await ext.storage.local.set({ locked, panic });
   };
-  const toast = (msg) => {
+  const toast = (html, isWarn = false) => {
     if (!host || !host.isConnected) buildOverlay();
     const el = shadow.getElementById("toast");
-    el.textContent = msg; el.classList.add("on");
+    el.innerHTML = html;
+    el.style.color = isWarn ? "#ffb74d" : "#25d366";
+    el.classList.add("on");
     setTimeout(() => el.classList.remove("on"), 4000);
   };
   const lockNow = () => {
     if (hasAuth()) setLocked(true);
-    else toast("Atur PIN atau sambungkan Windows Hello dulu di popup Privacy Shield");
+    else toast(ICONS.alert + " <span>Atur PIN atau sambungkan Windows Hello dulu di popup Privacy Shield</span>", true);
   };
   const startRegisterHello = () => {
     registeringKey = true;
@@ -671,7 +693,7 @@
           if (!faceAlertActive) {
             faceAlertActive = true;
             setFlag("data-wps-face-alert", true);
-            toast("⚠️ Terdeteksi " + v + " wajah! Seluruh chat disamarkan otomatis.");
+            toast(ICONS.alert + " <span>Terdeteksi " + v + " wajah! Seluruh chat disamarkan otomatis.</span>", true);
           }
         } else {
           faceClear++;
@@ -749,7 +771,7 @@
   const onStorageChanged = () => load(false);
   const onRuntimeMessage = (m, _sender, sendResponse) => {
     if (!m || !m.wpsCmd) return;
-    if (m.wpsCmd === "ping") sendResponse({ ok: true, v: 10 });
+    if (m.wpsCmd === "ping") sendResponse({ ok: true, v: 11 });
     else if (m.wpsCmd === "getChats") sendResponse({ ok: true, chats: getVisibleChatNames() });
     else if (m.wpsCmd === "startCamera") {
       s.faceDetect = true;
@@ -789,7 +811,7 @@
   };
 
   window.__wpsCleanup = cleanup;
-  window.__wpsVersion = 10;
+  window.__wpsVersion = 11;
   window.__wpsGetChats = getVisibleChatNames;
   window.__wpsSync = () => load(false);
   window.__wpsStartCamera = () => { s.faceDetect = true; s.faceConsent = true; syncFace(); };

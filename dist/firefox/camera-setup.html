@@ -2,22 +2,116 @@
 <html lang="id">
 <head>
   <meta charset="utf-8">
-  <title>Deteksi wajah: persetujuan</title>
+  <title>Deteksi Wajah: Persetujuan Kamera</title>
   <link rel="stylesheet" href="popup.css">
-  <style>body { width: auto; max-width: 520px; margin: 40px auto; font-size: 15px; } button { padding: 8px 16px; }</style>
+  <style>
+    body {
+      width: auto;
+      max-width: 520px;
+      margin: 48px auto;
+      padding: 0 16px;
+      font-size: 13.5px;
+      line-height: 1.5;
+    }
+    .setup-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      box-shadow: var(--shadow-card);
+    }
+    .setup-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .setup-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-lg);
+      background: var(--primary-light);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .setup-icon svg { width: 22px; height: 22px; }
+    h1 { margin: 0; font-size: 17px; font-weight: 700; color: var(--text-primary); }
+    .lead { color: var(--text-secondary); margin: 0 0 14px; font-size: 13px; }
+    .points {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .points li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 12.5px;
+      color: var(--text-secondary);
+    }
+    .points li svg {
+      width: 16px;
+      height: 16px;
+      color: var(--primary);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .action-box {
+      border-top: 1px solid var(--border);
+      padding-top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+  </style>
 </head>
 <body>
-  <h1>Deteksi wajah orang lain (opsional)</h1>
-  <p>Fitur ini memakai kamera untuk menghitung jumlah wajah di depan layar. Jika ada lebih dari satu wajah, WhatsApp Web otomatis di-blur.</p>
-  <ul>
-    <li>Pemrosesan 100% di komputer Anda, model dijalankan lokal.</li>
-    <li>Gambar kamera tidak disimpan, tidak direkam, dan tidak dikirim ke mana pun. Extension tidak punya izin koneksi keluar.</li>
-    <li>Kamera hanya menyala saat tab WhatsApp Web terbuka dan fitur aktif. Lampu kamera akan menyala, dan lencana "Kamera aktif" tampil di halaman.</li>
-    <li>Bisa dimatikan kapan saja di popup, dan izin kamera bisa dicabut di pengaturan browser.</li>
-  </ul>
-  <label><input type="checkbox" id="agree"> Saya mengerti dan setuju kamera dipakai untuk deteksi wajah.</label>
-  <p><button id="go" disabled>Izinkan kamera dan aktifkan</button></p>
-  <p id="msg" class="note"></p>
+  <div class="setup-card">
+    <div class="setup-header">
+      <div class="setup-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+      </div>
+      <div>
+        <h1>Deteksi Pengintip Layar</h1>
+        <p class="lead">Anti-Shoulder Surfing dengan AI Lokal</p>
+      </div>
+    </div>
+
+    <ul class="points">
+      <li>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <span><strong>100% Pemrosesan Lokal:</strong> Model AI dijalankan sepenuhnya di browser Anda. Tidak ada video atau gambar yang disimpan atau dikirim ke internet.</span>
+      </li>
+      <li>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <span><strong>Perlindungan Otomatis:</strong> Jika terdeteksi lebih dari 1 wajah di depan layar, seluruh obrolan WhatsApp Web langsung disamarkan (blur total).</span>
+      </li>
+      <li>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <span><strong>Kendali Penuh:</strong> Kamera hanya menyala ketika tab WhatsApp Web aktif dan fitur ini dihidupkan. Bisa dimatikan kapan saja.</span>
+      </li>
+    </ul>
+
+    <div class="action-box">
+      <label class="custom-check" style="font-size: 13px;">
+        <input type="checkbox" id="agree">
+        <span>Saya mengerti dan menyetujui akses kamera lokal untuk deteksi wajah.</span>
+      </label>
+      <button id="go" class="primary-btn" disabled style="padding: 10px 18px; font-size: 13px; justify-content: center;">
+        Izinkan Kamera & Aktifkan
+      </button>
+      <div id="msg" class="note"></div>
+    </div>
+  </div>
   <script src="camera-setup.js"></script>
 </body>
 </html>

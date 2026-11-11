@@ -1,5 +1,18 @@
 const ext = globalThis.browser ?? globalThis.chrome;
 
+const ICONS = {
+  shield: `<svg class="wps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+  lock: `<svg class="wps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
+  key: `<svg class="wps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-1.5 1.5L14 9l-1.5-1.5L11 9l-1.5-1.5L8 9l-1.5-1.5L5 9a6 6 0 1 0 8.5 8.5L22 9l-1-7z"/></svg>`,
+  fingerprint: `<svg class="wps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12C2 6.5 6.5 2 12 2a10 10 0 0 1 8 4"/><path d="M5 19.5C5.5 18 6 15 6 12c0-.7.1-1.4.3-2"/><path d="M8.6 15.5c.3-1 .4-2.2.4-3.5 0-1.7.7-3.2 1.8-4.2"/><path d="M12 7c2.8 0 5 2.2 5 5 0 2.2-.6 4.3-1.6 6"/><path d="M15 12c0 3.5-.8 6.5-2.2 8.5"/><path d="M19 12c0 2-.4 3.9-1 5.5"/></svg>`,
+  faceScan: `<svg class="wps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="10" r="3"/><path d="M7 17a5 5 0 0 1 10 0"/></svg>`,
+  check: `<svg class="wps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+  plus: `<svg class="wps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
+  refresh: `<svg class="wps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>`,
+  x: `<svg class="wps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+  alert: `<svg class="wps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+};
+
 const PROFILE_LABELS = {
   custom: "Kustom",
   kantor: "Kantor",
@@ -68,7 +81,7 @@ const ensureTabInjected = async (tabId) => {
       target: { tabId },
       func: () => window.__wpsVersion || 0,
     });
-    if (!chk || !chk[0] || chk[0].result !== 10) {
+    if (!chk || !chk[0] || chk[0].result !== 11) {
       await ext.scripting.insertCSS({ target: { tabId }, files: ["content.css"] });
       await ext.scripting.executeScript({ target: { tabId }, files: ["pin.js", "content.js"] });
     }
@@ -132,7 +145,7 @@ let waChats = [];
 const showAuthStatus = (hasPin, hasKey, isWaOrigin, msgText = "", isErr = false) => {
   // Status Kartu PIN
   const pinBadge = $("pinBadge");
-  pinBadge.textContent = hasPin ? "✓ Terpasang" : "Belum diatur";
+  pinBadge.innerHTML = hasPin ? (ICONS.check + " Terpasang") : "Belum diatur";
   pinBadge.className = "status-pill " + (hasPin ? "on" : "off");
 
   $("oldPin").style.display = hasPin ? "" : "none";
@@ -152,25 +165,25 @@ const showAuthStatus = (hasPin, hasKey, isWaOrigin, msgText = "", isErr = false)
   const clearKeyBtn = $("clearKey");
 
   if (hasKey && isWaOrigin) {
-    helloBadge.textContent = "✓ Terhubung";
+    helloBadge.innerHTML = ICONS.check + " Terhubung";
     helloBadge.className = "status-pill on";
     helloDesc.className = "note ok";
-    helloDesc.textContent = "✓ Windows Hello / sidik jari sudah terhubung dan siap membuka kunci.";
-    regBtn.textContent = "↻ Daftar Ulang Windows Hello";
+    helloDesc.textContent = "Windows Hello / sidik jari sudah terhubung dan siap membuka kunci.";
+    regBtn.innerHTML = ICONS.refresh + " Daftar Ulang Windows Hello";
     clearKeyBtn.style.display = "";
   } else if (hasKey && !isWaOrigin) {
     helloBadge.textContent = "Perlu pembaruan";
     helloBadge.className = "status-pill warn";
     helloDesc.className = "note err";
     helloDesc.textContent = "Klik tombol di bawah sekali untuk menyambungkan langsung di tab WhatsApp Web.";
-    regBtn.textContent = "👆 Sambungkan Ulang di WhatsApp Web";
+    regBtn.innerHTML = ICONS.refresh + " Sambungkan di WhatsApp Web";
     clearKeyBtn.style.display = "";
   } else {
     helloBadge.textContent = "Belum terhubung";
     helloBadge.className = "status-pill off";
     helloDesc.className = "note";
-    helloDesc.textContent = "Gunakan sidik jari atau wajah di laptop Anda untuk membuka kunci.";
-    regBtn.textContent = "+ Sambungkan Windows Hello / Sidik Jari";
+    helloDesc.textContent = "Gunakan sensor biometrik sidik jari atau wajah untuk membuka kunci.";
+    regBtn.innerHTML = ICONS.plus + " Sambungkan Windows Hello";
     clearKeyBtn.style.display = "none";
   }
 };
@@ -221,6 +234,8 @@ const renderControls = () => {
     if (el.type === "checkbox") el.checked = Boolean(val);
     else el.value = val;
   }
+  const blurValEl = $("blurVal");
+  if (blurValEl) blurValEl.textContent = (cfg.blur ?? 8) + "px";
   const isSel = cfg.scope === "selected";
   $("scopeAll").classList.toggle("active", !isSel);
   $("scopeSelected").classList.toggle("active", isSel);
@@ -266,11 +281,14 @@ const renderChipsAndList = () => {
     for (const c of cfg.chats) {
       const chip = document.createElement("span");
       chip.className = "chip";
-      chip.textContent = c + " ";
+      const nameSpan = document.createElement("span");
+      nameSpan.textContent = c;
+      chip.appendChild(nameSpan);
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.textContent = "×";
+      btn.innerHTML = ICONS.x;
       btn.title = "Hapus " + c;
+      btn.setAttribute("aria-label", "Hapus " + c);
       btn.addEventListener("click", () => removeChat(c));
       chip.appendChild(btn);
       chipsEl.appendChild(chip);
@@ -285,8 +303,8 @@ const renderChipsAndList = () => {
     const empty = document.createElement("span");
     empty.className = "empty-hint";
     empty.textContent = waChats.length
-      ? "Tidak ada kontak yang cocok. Klik '+ Tambah' untuk menambah manual."
-      : "Buka tab WhatsApp Web lalu klik '↻ Muat ulang' untuk menampilkan daftar kontak.";
+      ? "Tidak ada kontak yang cocok. Klik 'Tambah' untuk menambah manual."
+      : "Buka tab WhatsApp Web lalu klik 'Muat ulang' untuk menampilkan daftar kontak.";
     listEl.appendChild(empty);
     return;
   }
@@ -295,7 +313,8 @@ const renderChipsAndList = () => {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "wa-item" + (on ? " on" : "");
-    btn.textContent = (on ? "✓ " : "+ ") + name;
+    const safeName = name.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    btn.innerHTML = (on ? ICONS.check : ICONS.plus) + "<span>" + safeName + "</span>";
     btn.addEventListener("click", () => toggleChat(name));
     listEl.appendChild(btn);
   }
@@ -322,7 +341,7 @@ const renderFaceCardUI = (isOn) => {
   if (!badge) return;
   if (isOn) {
     badge.className = "status-pill on";
-    badge.textContent = "✓ Aktif";
+    badge.innerHTML = ICONS.check + " Aktif";
     if (desc) desc.textContent = "Aktif memantau pengintip di layar. Seluruh obrolan WhatsApp otomatis di-blur jika terdeteksi > 1 wajah.";
     if (actionRow) actionRow.style.display = "none";
   } else {
@@ -342,12 +361,16 @@ ext.storage.local.get(DEFAULTS).then(async (s) => {
   profileConfigs = ensureProfileConfigs(s);
   showAuthStatus(!!s.pinHash, !!s.webauthnCred, s.webauthnOrigin === "wa");
   renderFaceCardUI(Boolean(s.faceDetect));
-  if (s.decoyHash) $("decoyStatus").textContent = "✓ PIN decoy tersimpan.";
+  if (s.decoyHash) $("decoyStatus").textContent = "PIN decoy tersimpan.";
 
   for (const el of document.querySelectorAll("[data-key]")) {
     const k = el.dataset.key;
     const save = async () => {
       const v = el.type === "checkbox" ? el.checked : el.type === "range" || el.type === "number" ? Number(el.value) : el.value;
+      if (k === "blur") {
+        const bv = $("blurVal");
+        if (bv) bv.textContent = v + "px";
+      }
       if (PROFILE_KEYS.includes(k)) {
         activeCfg()[k] = v;
         await syncActiveProfileToStorage();
@@ -458,7 +481,7 @@ const saveMainPin = async () => {
   await ext.storage.local.set(await wpsHashPin(pin));
   $("oldPin").value = "";
   $("pin").value = "";
-  showAuthStatus(true, hasKey, isWa, hasPin ? "✓ PIN berhasil diubah." : "✓ PIN berhasil disimpan.");
+  showAuthStatus(true, hasKey, isWa, hasPin ? "PIN berhasil diubah." : "PIN berhasil disimpan.");
   await runInWaTabs("sync");
 };
 $("setPin").addEventListener("click", saveMainPin);
@@ -577,7 +600,7 @@ const saveDecoyPin = async () => {
   await ext.storage.local.set({ decoyHash: h.pinHash, decoySalt: h.pinSalt });
   $("decoyAuthPin").value = "";
   $("decoyPin").value = "";
-  msg("✓ PIN decoy tersimpan.");
+  msg("PIN decoy tersimpan.");
 };
 $("setDecoy").addEventListener("click", saveDecoyPin);
 $("decoyPin").addEventListener("keydown", (e) => { if (e.key === "Enter") saveDecoyPin(); });
