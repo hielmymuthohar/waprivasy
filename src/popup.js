@@ -22,19 +22,19 @@ const PROFILE_LABELS = {
 };
 
 const PROFILE_PRESETS = {
-  custom: { enabled: true, messages: true, previews: true, media: true, names: true, avatars: true, input: false, hoverReveal: true, blurOnAway: true, blurOnShare: true, presentation: false, idleMinutes: 0, blur: 8, scope: "all", chats: [] },
-  kantor: { enabled: true, messages: true, previews: true, media: true, names: false, avatars: false, input: true, hoverReveal: true, blurOnAway: true, blurOnShare: true, presentation: false, idleMinutes: 2, blur: 10, scope: "selected", chats: [] },
-  rumah: { enabled: true, messages: false, previews: true, media: false, names: false, avatars: false, input: false, hoverReveal: true, blurOnAway: false, blurOnShare: true, presentation: false, idleMinutes: 0, blur: 6, scope: "selected", chats: [] },
-  publik: { enabled: true, messages: true, previews: true, media: true, names: true, avatars: true, input: true, hoverReveal: false, blurOnAway: true, blurOnShare: true, presentation: false, idleMinutes: 1, blur: 14, scope: "all", chats: [] },
-  presentasi: { enabled: true, messages: true, previews: true, media: true, names: true, avatars: true, input: true, hoverReveal: false, blurOnAway: true, blurOnShare: true, presentation: true, idleMinutes: 0, blur: 12, scope: "all", chats: [] },
+  custom: { enabled: true, messages: true, previews: true, media: true, names: true, avatars: true, input: false, hoverReveal: true, blurOnAway: true, blurOnShare: true, presentation: false, idleMinutes: 0, lockOnLoad: false, blur: 8, scope: "all", chats: [] },
+  kantor: { enabled: true, messages: true, previews: true, media: true, names: false, avatars: false, input: true, hoverReveal: true, blurOnAway: true, blurOnShare: true, presentation: false, idleMinutes: 2, lockOnLoad: false, blur: 10, scope: "selected", chats: [] },
+  rumah: { enabled: true, messages: false, previews: true, media: false, names: false, avatars: false, input: false, hoverReveal: true, blurOnAway: false, blurOnShare: true, presentation: false, idleMinutes: 0, lockOnLoad: false, blur: 6, scope: "selected", chats: [] },
+  publik: { enabled: true, messages: true, previews: true, media: true, names: true, avatars: true, input: true, hoverReveal: false, blurOnAway: true, blurOnShare: true, presentation: false, idleMinutes: 1, lockOnLoad: false, blur: 14, scope: "all", chats: [] },
+  presentasi: { enabled: true, messages: true, previews: true, media: true, names: true, avatars: true, input: true, hoverReveal: false, blurOnAway: true, blurOnShare: true, presentation: true, idleMinutes: 0, lockOnLoad: false, blur: 12, scope: "all", chats: [] },
 };
 
-const PROFILE_KEYS = ["enabled", "messages", "previews", "media", "names", "avatars", "input", "hoverReveal", "blurOnAway", "blurOnShare", "presentation", "idleMinutes", "blur"];
+const PROFILE_KEYS = ["enabled", "messages", "previews", "media", "names", "avatars", "input", "hoverReveal", "blurOnAway", "blurOnShare", "presentation", "idleMinutes", "lockOnLoad", "blur"];
 
 const DEFAULTS = {
   enabled: true, messages: true, previews: true, media: true,
   names: true, avatars: true, input: false, hoverReveal: true, blur: 8,
-  blurOnAway: true, idleMinutes: 0, lockOnLoad: true,
+  blurOnAway: true, idleMinutes: 0, lockOnLoad: false,
   scope: "all", privateChats: "", pinHash: "", pinSalt: "",
   locked: false, panic: false,
   blurOnShare: true, presentation: false,
@@ -227,7 +227,10 @@ const syncActiveProfileToStorage = async () => {
 const renderControls = () => {
   const cfg = activeCfg();
   $("profile").value = currentProfile;
-  $("profileBadge").textContent = "Profil: " + (PROFILE_LABELS[currentProfile] || "Kustom");
+  const label = PROFILE_LABELS[currentProfile] || "Kustom";
+  $("profileBadge").textContent = "Profil: " + label;
+  const grpBadge = $("profileGroupBadge");
+  if (grpBadge) grpBadge.textContent = label;
   for (const el of document.querySelectorAll("[data-key]")) {
     const k = el.dataset.key;
     const val = k in cfg ? cfg[k] : state[k];

@@ -59,6 +59,66 @@ body {
   align-items: center;
   margin-bottom: 10px;
 }
+
+/* Container Pengaturan Berbasis Profil */
+.profile-group-container {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 10px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-card);
+}
+.profile-group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px dashed var(--border);
+}
+.profile-group-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+}
+.profile-group-badge {
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: var(--primary-light);
+  color: var(--primary);
+  border: 1px solid var(--primary-border);
+}
+
+/* Pembatas Seksi Pengaturan Keamanan Global */
+.global-sec-divider {
+  margin: 16px 0 10px;
+  padding-top: 12px;
+  border-top: 1.5px solid #cbd5e1;
+}
+.global-sec-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-primary);
+}
+.global-sec-note {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  margin-left: 23px;
+}
 .brand {
   display: flex;
   align-items: center;

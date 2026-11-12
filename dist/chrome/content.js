@@ -4,7 +4,7 @@
   const DEFAULTS = {
     enabled: true, messages: true, previews: true, media: true,
     names: true, avatars: true, input: false, hoverReveal: true, blur: 8,
-    blurOnAway: true, idleMinutes: 0, lockOnLoad: true,
+    blurOnAway: true, idleMinutes: 0, lockOnLoad: false,
     scope: "all", privateChats: "",
     pinHash: "", pinSalt: "", locked: false, panic: false,
     presentation: false, blurOnShare: true, sharing: false,

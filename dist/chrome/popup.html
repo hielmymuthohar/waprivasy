@@ -27,163 +27,139 @@
     </label>
   </div>
 
-  <!-- Hero Master Toggle -->
-  <label class="master-card" for="masterToggle">
-    <div class="master-left">
-      <svg class="wps-icon icon-md" style="color:var(--primary)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-      <span class="master-label">Aktifkan Perlindungan</span>
-    </div>
-    <div style="display:flex; align-items:center; gap:8px;">
-      <kbd>Alt+Z</kbd>
-      <div class="switch">
-        <input type="checkbox" data-key="enabled" id="masterToggle">
-        <span class="slider-toggle"></span>
+  <!-- KONTENER PENGATURAN BERBASIS PROFIL -->
+  <div class="profile-group-container">
+    <div class="profile-group-header">
+      <div class="profile-group-title">
+        <svg class="wps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>Pengaturan Profil</span>
       </div>
-    </div>
-  </label>
-
-  <!-- Setting Checkboxes Card -->
-  <div class="setting-card">
-    <label class="custom-check"><input type="checkbox" data-key="messages"><span>Pesan di chat</span></label>
-    <label class="custom-check"><input type="checkbox" data-key="previews"><span>Preview daftar chat</span></label>
-    <label class="custom-check"><input type="checkbox" data-key="media"><span>Media (gambar/video)</span></label>
-    <label class="custom-check"><input type="checkbox" data-key="names"><span>Nama kontak/grup</span></label>
-    <label class="custom-check"><input type="checkbox" data-key="avatars"><span>Foto profil</span></label>
-    <label class="custom-check"><input type="checkbox" data-key="input"><span>Kolom ketik</span></label>
-    <div class="check-divider"></div>
-    <label class="custom-check"><input type="checkbox" data-key="hoverReveal"><span>Tampilkan saat kursor di atasnya</span></label>
-    <label class="custom-check"><input type="checkbox" data-key="blurOnAway"><span>Blur saat jendela kehilangan fokus</span></label>
-    <label class="custom-check"><input type="checkbox" data-key="blurOnShare"><span>Blur saat berbagi layar Meet/Teams/Zoom</span></label>
-    <label class="custom-check"><input type="checkbox" data-key="presentation"><span>Mode presentasi (nama &amp; foto selalu samar)</span></label>
-  </div>
-
-  <!-- Blur Intensity Slider -->
-  <div class="range-box">
-    <div class="range-top">
-      <span>Kekuatan Blur</span>
-      <span id="blurVal" class="range-val">8px</span>
-    </div>
-    <input type="range" min="2" max="20" data-key="blur" id="blurRange">
-  </div>
-
-  <!-- Cakupan Chat -->
-  <div class="sec-head">
-    <h2>
-      <svg class="wps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-      <span>Cakupan Chat</span>
-    </h2>
-    <span id="profileBadge" class="status-pill off">Profil: Kustom</span>
-  </div>
-  <div class="scope-tabs">
-    <button type="button" id="scopeAll" class="tab-btn active">
-      <svg class="wps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-      <span>Semua chat</span>
-    </button>
-    <button type="button" id="scopeSelected" class="tab-btn">
-      <svg class="wps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-      <span>Chat tertentu</span>
-    </button>
-  </div>
-
-  <div id="chatPickerPanel" class="picker-panel" style="display:none">
-    <div class="sub-label">Chat yang disamarkan pada profil ini:</div>
-    <div id="selectedChips" class="chip-list"></div>
-
-    <div class="row">
-      <input id="chatInput" type="text" placeholder="Cari atau ketik nama kontak/grup…" autocomplete="off">
-      <button type="button" id="addChatBtn" class="primary-btn">
-        <svg class="wps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        <span>Tambah</span>
-      </button>
+      <span id="profileGroupBadge" class="profile-group-badge">Kustom</span>
     </div>
 
-    <div class="sub-head">
-      <span>Pilih kontak/grup dari WhatsApp:</span>
-      <button type="button" id="refreshChatsBtn" class="link-btn" title="Muat ulang daftar kontak dari tab WhatsApp Web">
-        <svg class="wps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
-        <span>Muat ulang</span>
-      </button>
-    </div>
-    <div id="waChatList" class="wa-list"></div>
-  </div>
-
-  <!-- Kunci & Keamanan -->
-  <h2>
-    <svg class="wps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-    <span>Aksi Cepat</span>
-  </h2>
-  <div class="action-grid">
-    <button type="button" id="lockNow" class="action-btn">
-      <div class="action-left">
-        <svg class="wps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        <span>Kunci</span>
+    <!-- Hero Master Toggle -->
+    <label class="master-card" for="masterToggle">
+      <div class="master-left">
+        <svg class="wps-icon icon-md" style="color:var(--primary)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span class="master-label">Aktifkan Perlindungan</span>
       </div>
-      <kbd>Alt+L</kbd>
-    </button>
-    <button type="button" id="panic" class="action-btn action-btn-danger">
-      <div class="action-left">
-        <svg class="wps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        <span>Panic</span>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <kbd>Alt+Z</kbd>
+        <div class="switch">
+          <input type="checkbox" data-key="enabled" id="masterToggle">
+          <span class="slider-toggle"></span>
+        </div>
       </div>
-      <kbd>Alt+X</kbd>
-    </button>
-  </div>
-
-  <!-- Kartu PIN -->
-  <div class="sec-card">
-    <div class="card-head">
-      <span class="card-title">
-        <svg class="wps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-1.5 1.5L14 9l-1.5-1.5L11 9l-1.5-1.5L8 9l-1.5-1.5L5 9a6 6 0 1 0 8.5 8.5L22 9l-1-7z"/></svg>
-        <span>Kunci PIN Master</span>
-      </span>
-      <span id="pinBadge" class="status-pill off">Belum diatur</span>
-    </div>
-    <div class="stack-form">
-      <input id="oldPin" type="password" inputmode="numeric" placeholder="Masukkan PIN saat ini" autocomplete="off" style="display:none">
-      <div class="row">
-        <input id="pin" type="password" inputmode="numeric" placeholder="PIN baru (4–12 digit)" autocomplete="off">
-        <button type="button" id="setPin" class="primary-btn">Simpan</button>
-        <button type="button" id="clearPin" class="ghost-danger-btn" style="display:none">Hapus</button>
-      </div>
-    </div>
-    <div id="pinStatus" class="note"></div>
-    <div id="deletePinBox" class="confirm-box" style="display:none">
-      <div class="sub-label">Konfirmasi hapus PIN:</div>
-      <div class="row">
-        <input id="confirmDelPin" type="password" inputmode="numeric" placeholder="PIN saat ini" autocomplete="off">
-        <button type="button" id="confirmDelBtn" class="danger-btn">Hapus</button>
-        <button type="button" id="cancelDelBtn">Batal</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Kartu Windows Hello / Fingerprint -->
-  <div class="sec-card">
-    <div class="card-head">
-      <span class="card-title">
-        <svg class="wps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12C2 6.5 6.5 2 12 2a10 10 0 0 1 8 4"/><path d="M5 19.5C5.5 18 6 15 6 12c0-.7.1-1.4.3-2"/><path d="M8.6 15.5c.3-1 .4-2.2.4-3.5 0-1.7.7-3.2 1.8-4.2"/><path d="M12 7c2.8 0 5 2.2 5 5 0 2.2-.6 4.3-1.6 6"/><path d="M15 12c0 3.5-.8 6.5-2.2 8.5"/><path d="M19 12c0 2-.4 3.9-1 5.5"/></svg>
-        <span>Windows Hello / Sidik Jari</span>
-      </span>
-      <span id="helloBadge" class="status-pill off">Belum terhubung</span>
-    </div>
-    <div id="helloDesc" class="note">Gunakan sensor biometrik sidik jari atau wajah untuk membuka kunci instan.</div>
-    <div class="row" style="margin-top: 6px;">
-      <button type="button" id="regKey" class="full-btn">Sambungkan Windows Hello</button>
-      <button type="button" id="clearKey" class="ghost-danger-btn" style="display:none">Putuskan</button>
-    </div>
-  </div>
-
-  <!-- Otomatisasi Kunci -->
-  <div class="setting-card" style="margin: 8px 0;">
-    <label class="custom-check"><input type="checkbox" data-key="lockOnLoad"><span>Kunci otomatis saat WhatsApp Web dibuka</span></label>
-    <div class="check-divider"></div>
-    <label style="display:flex; justify-content:space-between; align-items:center; padding: 4px 6px; font-size: 12px; color: var(--text-secondary);">
-      <span>Kunci otomatis saat idle (menit, 0 = mati)</span>
-      <input type="number" min="0" max="240" data-key="idleMinutes" class="num">
     </label>
+
+    <!-- Setting Checkboxes Card -->
+    <div class="setting-card">
+      <label class="custom-check"><input type="checkbox" data-key="messages"><span>Pesan di chat</span></label>
+      <label class="custom-check"><input type="checkbox" data-key="previews"><span>Preview daftar chat</span></label>
+      <label class="custom-check"><input type="checkbox" data-key="media"><span>Media (gambar/video)</span></label>
+      <label class="custom-check"><input type="checkbox" data-key="names"><span>Nama kontak/grup</span></label>
+      <label class="custom-check"><input type="checkbox" data-key="avatars"><span>Foto profil</span></label>
+      <label class="custom-check"><input type="checkbox" data-key="input"><span>Kolom ketik</span></label>
+      <div class="check-divider"></div>
+      <label class="custom-check"><input type="checkbox" data-key="hoverReveal"><span>Tampilkan saat kursor di atasnya</span></label>
+      <label class="custom-check"><input type="checkbox" data-key="blurOnAway"><span>Blur saat jendela kehilangan fokus</span></label>
+      <label class="custom-check"><input type="checkbox" data-key="blurOnShare"><span>Blur saat berbagi layar Meet/Teams/Zoom</span></label>
+      <label class="custom-check"><input type="checkbox" data-key="presentation"><span>Mode presentasi (nama &amp; foto selalu samar)</span></label>
+    </div>
+
+    <!-- Blur Intensity Slider -->
+    <div class="range-box">
+      <div class="range-top">
+        <span>Kekuatan Blur</span>
+        <span id="blurVal" class="range-val">8px</span>
+      </div>
+      <input type="range" min="2" max="20" data-key="blur" id="blurRange">
+    </div>
+
+    <!-- Cakupan Chat -->
+    <div class="sec-head">
+      <h2>
+        <svg class="wps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span>Cakupan Chat</span>
+      </h2>
+      <span id="profileBadge" class="status-pill off">Profil: Kustom</span>
+    </div>
+    <div class="scope-tabs">
+      <button type="button" id="scopeAll" class="tab-btn active">
+        <svg class="wps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        <span>Semua chat</span>
+      </button>
+      <button type="button" id="scopeSelected" class="tab-btn">
+        <svg class="wps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        <span>Chat tertentu</span>
+      </button>
+    </div>
+
+    <div id="chatPickerPanel" class="picker-panel" style="display:none">
+      <div class="sub-label">Chat yang disamarkan pada profil ini:</div>
+      <div id="selectedChips" class="chip-list"></div>
+
+      <div class="row">
+        <input id="chatInput" type="text" placeholder="Cari atau ketik nama kontak/grup…" autocomplete="off">
+        <button type="button" id="addChatBtn" class="primary-btn">
+          <svg class="wps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span>Tambah</span>
+        </button>
+      </div>
+
+      <div class="sub-head">
+        <span>Pilih kontak/grup dari WhatsApp:</span>
+        <button type="button" id="refreshChatsBtn" class="link-btn" title="Muat ulang daftar kontak dari tab WhatsApp Web">
+          <svg class="wps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+          <span>Muat ulang</span>
+        </button>
+      </div>
+      <div id="waChatList" class="wa-list"></div>
+    </div>
+
+    <!-- Aksi Cepat -->
+    <h2>
+      <svg class="wps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      <span>Aksi Cepat</span>
+    </h2>
+    <div class="action-grid">
+      <button type="button" id="lockNow" class="action-btn">
+        <div class="action-left">
+          <svg class="wps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span>Kunci</span>
+        </div>
+        <kbd>Alt+L</kbd>
+      </button>
+      <button type="button" id="panic" class="action-btn action-btn-danger">
+        <div class="action-left">
+          <svg class="wps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span>Panic</span>
+        </div>
+        <kbd>Alt+X</kbd>
+      </button>
+    </div>
+
+    <!-- Pengaturan Kunci Otomatis (Setelah Aksi Cepat, bagian akhir dari profil) -->
+    <div class="setting-card" style="margin-top: 8px;">
+      <label class="custom-check"><input type="checkbox" data-key="lockOnLoad"><span>Kunci otomatis saat WhatsApp Web dibuka</span></label>
+      <div class="check-divider"></div>
+      <label style="display:flex; justify-content:space-between; align-items:center; padding: 4px 6px; font-size: 12px; color: var(--text-secondary);">
+        <span>Kunci otomatis saat idle (menit, 0 = mati)</span>
+        <input type="number" min="0" max="240" data-key="idleMinutes" class="num">
+      </label>
+    </div>
   </div>
 
-  <!-- Kartu Deteksi Wajah (Anti-Ngintip) -->
+  <!-- PEMBATAS SEKSI PENGATURAN KEAMANAN GLOBAL -->
+  <div class="global-sec-divider">
+    <div class="global-sec-head">
+      <svg class="wps-icon icon-md" style="color:var(--primary)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><circle cx="12" cy="11" r="2"/></svg>
+      <span>Pengaturan Keamanan Global</span>
+    </div>
+    <div class="global-sec-note">(Berlaku untuk semua profil)</div>
+  </div>
+
+  <!-- 1. Kartu Deteksi Wajah (Anti-Ngintip) -->
   <div class="sec-card">
     <div class="card-head">
       <span class="card-title">
@@ -213,7 +189,51 @@
     </div>
   </div>
 
-  <!-- Kartu Decoy Mode -->
+  <!-- 2. Kartu PIN Master -->
+  <div class="sec-card">
+    <div class="card-head">
+      <span class="card-title">
+        <svg class="wps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-1.5 1.5L14 9l-1.5-1.5L11 9l-1.5-1.5L8 9l-1.5-1.5L5 9a6 6 0 1 0 8.5 8.5L22 9l-1-7z"/></svg>
+        <span>Kunci PIN Master</span>
+      </span>
+      <span id="pinBadge" class="status-pill off">Belum diatur</span>
+    </div>
+    <div class="stack-form">
+      <input id="oldPin" type="password" inputmode="numeric" placeholder="Masukkan PIN saat ini" autocomplete="off" style="display:none">
+      <div class="row">
+        <input id="pin" type="password" inputmode="numeric" placeholder="PIN baru (4–12 digit)" autocomplete="off">
+        <button type="button" id="setPin" class="primary-btn">Simpan</button>
+        <button type="button" id="clearPin" class="ghost-danger-btn" style="display:none">Hapus</button>
+      </div>
+    </div>
+    <div id="pinStatus" class="note"></div>
+    <div id="deletePinBox" class="confirm-box" style="display:none">
+      <div class="sub-label">Konfirmasi hapus PIN:</div>
+      <div class="row">
+        <input id="confirmDelPin" type="password" inputmode="numeric" placeholder="PIN saat ini" autocomplete="off">
+        <button type="button" id="confirmDelBtn" class="danger-btn">Hapus</button>
+        <button type="button" id="cancelDelBtn">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Kartu Windows Hello / Fingerprint -->
+  <div class="sec-card">
+    <div class="card-head">
+      <span class="card-title">
+        <svg class="wps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12C2 6.5 6.5 2 12 2a10 10 0 0 1 8 4"/><path d="M5 19.5C5.5 18 6 15 6 12c0-.7.1-1.4.3-2"/><path d="M8.6 15.5c.3-1 .4-2.2.4-3.5 0-1.7.7-3.2 1.8-4.2"/><path d="M12 7c2.8 0 5 2.2 5 5 0 2.2-.6 4.3-1.6 6"/><path d="M15 12c0 3.5-.8 6.5-2.2 8.5"/><path d="M19 12c0 2-.4 3.9-1 5.5"/></svg>
+        <span>Windows Hello / Sidik Jari</span>
+      </span>
+      <span id="helloBadge" class="status-pill off">Belum terhubung</span>
+    </div>
+    <div id="helloDesc" class="note">Gunakan sensor biometrik sidik jari atau wajah untuk membuka kunci instan.</div>
+    <div class="row" style="margin-top: 6px;">
+      <button type="button" id="regKey" class="full-btn">Sambungkan Windows Hello</button>
+      <button type="button" id="clearKey" class="ghost-danger-btn" style="display:none">Putuskan</button>
+    </div>
+  </div>
+
+  <!-- 4. Kartu Decoy Mode -->
   <div class="sec-card">
     <div class="card-head">
       <span class="card-title">
