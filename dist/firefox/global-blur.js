@@ -94,6 +94,28 @@
     } catch {}
   };
 
+  // Lapor status fokus dari tab non-WA ke background.js
+  let lastReportedFocus = null;
+  const reportTabFocus = (focused) => {
+    if (focused === lastReportedFocus) return;
+    lastReportedFocus = focused;
+    try {
+      if (ext?.runtime?.sendMessage) {
+        ext.runtime.sendMessage({ wpsCmd: "tabFocusReport", focused }).catch(() => {});
+      }
+    } catch {}
+  };
+
+  window.addEventListener("focus", () => reportTabFocus(true));
+  window.addEventListener("blur", () => reportTabFocus(false));
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      reportTabFocus(false);
+    } else if (document.hasFocus()) {
+      reportTabFocus(true);
+    }
+  });
+
   ext.storage.onChanged.addListener((changes) => {
     if (changes.faceAlert || changes.faceDetect || changes.faceScope || changes.faceCount) {
       sync();

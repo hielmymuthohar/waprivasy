@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="id">
+
 <head>
   <meta charset="utf-8">
   <title>Deteksi Wajah: Persetujuan Kamera</title>
@@ -13,6 +14,7 @@
       font-size: 13.5px;
       line-height: 1.5;
     }
+
     .setup-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
@@ -20,12 +22,14 @@
       padding: 24px;
       box-shadow: var(--shadow-card);
     }
+
     .setup-header {
       display: flex;
       align-items: center;
       gap: 12px;
       margin-bottom: 16px;
     }
+
     .setup-icon {
       width: 44px;
       height: 44px;
@@ -37,9 +41,25 @@
       justify-content: center;
       flex-shrink: 0;
     }
-    .setup-icon svg { width: 22px; height: 22px; }
-    h1 { margin: 0; font-size: 17px; font-weight: 700; color: var(--text-primary); }
-    .lead { color: var(--text-secondary); margin: 0 0 14px; font-size: 13px; }
+
+    .setup-icon svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .lead {
+      color: var(--text-secondary);
+      margin: 0 0 14px;
+      font-size: 13px;
+    }
+
     .points {
       list-style: none;
       padding: 0;
@@ -48,6 +68,7 @@
       flex-direction: column;
       gap: 10px;
     }
+
     .points li {
       display: flex;
       align-items: flex-start;
@@ -55,6 +76,7 @@
       font-size: 12.5px;
       color: var(--text-secondary);
     }
+
     .points li svg {
       width: 16px;
       height: 16px;
@@ -62,6 +84,7 @@
       flex-shrink: 0;
       margin-top: 2px;
     }
+
     .preview-box {
       display: none;
       margin: 14px 0;
@@ -71,6 +94,7 @@
       background: #0b141a;
       position: relative;
     }
+
     .preview-box video {
       width: 100%;
       height: 220px;
@@ -78,6 +102,7 @@
       display: block;
       transform: scaleX(-1);
     }
+
     .preview-badge {
       position: absolute;
       bottom: 10px;
@@ -92,6 +117,7 @@
       align-items: center;
       gap: 6px;
     }
+
     .preview-dot {
       width: 8px;
       height: 8px;
@@ -99,6 +125,7 @@
       background: #25d366;
       box-shadow: 0 0 6px #25d366;
     }
+
     .action-box {
       border-top: 1px solid var(--border);
       padding-top: 16px;
@@ -108,13 +135,15 @@
     }
   </style>
 </head>
+
 <body>
   <div class="setup-card">
     <div class="setup-header">
       <div class="setup-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-          <circle cx="12" cy="13" r="4"/>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+          <circle cx="12" cy="13" r="4" />
         </svg>
       </div>
       <div>
@@ -125,16 +154,28 @@
 
     <ul class="points">
       <li>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        <span><strong>100% Pemrosesan Lokal:</strong> Model AI dijalankan sepenuhnya di memori browser. Tidak ada video atau gambar yang disimpan atau dikirim ke internet.</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+          stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+        <span><strong>100% Pemrosesan Lokal:</strong> Model AI dijalankan sepenuhnya di memori browser. Tidak ada video
+          atau gambar yang disimpan atau dikirim ke internet.</span>
       </li>
       <li>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        <span><strong>Perlindungan Multi-Tab:</strong> Melindungi privasi di seluruh tab browser. Jika terdeteksi lebih dari 1 wajah, halaman seketika disamarkan (blur total).</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+          stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+        <span><strong>Perlindungan Multi-Tab:</strong> Melindungi privasi di seluruh tab browser. Jika terdeteksi lebih
+          dari 1 wajah, halaman seketika disamarkan (blur total).</span>
       </li>
       <li>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        <span><strong>Kendali Penuh:</strong> Kamera otomatis tertidur saat Anda meminimalkan browser atau beralih ke aplikasi lain di luar browser.</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+          stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+        <span><strong>Kendali Penuh:</strong> Kamera otomatis tertidur saat Anda meminimalkan browser atau beralih ke
+          aplikasi lain di luar browser.</span>
       </li>
     </ul>
 
@@ -159,4 +200,5 @@
   </div>
   <script src="camera-setup.js"></script>
 </body>
+
 </html>

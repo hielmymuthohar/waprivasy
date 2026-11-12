@@ -739,12 +739,17 @@
       // MODE SEMUA TAB BROWSER:
       // Tab WhatsApp Web menjadi sensor kamera utama yang memantau pengintip di seluruh tab.
       // Kamera tetap aktif selama jendela browser aktif (meski user pindah ke tab non-WA).
-      // Kamera HANYA tidur (mati) jika user minimize atau beralih ke aplikasi desktop luar.
-      // Jeda 500ms debounce sudah dieksekusi di background.js sebelum mengirim browserFocused: false.
+      // Kamera HANYA tidur (mati) jika user minimize atau beralih ke aplikasi desktop luar (500ms debounce).
       if (!browserFocused) {
-        if (camAwayTimer) { clearTimeout(camAwayTimer); camAwayTimer = null; }
-        stopKeepAlive();
-        stopCameraStream();
+        if (!camAwayTimer) {
+          camAwayTimer = setTimeout(() => {
+            camAwayTimer = null;
+            if (!browserFocused) {
+              stopKeepAlive();
+              stopCameraStream();
+            }
+          }, 500);
+        }
       } else {
         if (camAwayTimer) { clearTimeout(camAwayTimer); camAwayTimer = null; }
         keepAliveBackground();
@@ -759,21 +764,14 @@
       stopKeepAlive();
       const isWaActive = !document.hidden && (document.hasFocus() || popupOpen) && browserFocused;
       if (!isWaActive) {
-        if (!browserFocused) {
-          // Browser tidak fokus / minimize: jeda 500ms sudah selesai di background.js, langsung matikan
-          if (camAwayTimer) { clearTimeout(camAwayTimer); camAwayTimer = null; }
-          stopCameraStream();
-        } else {
-          // Tab berganti di dalam browser: jalankan jeda debounce 500ms
-          if (!camAwayTimer) {
-            camAwayTimer = setTimeout(() => {
-              camAwayTimer = null;
-              const stillActive = !document.hidden && (document.hasFocus() || popupOpen) && browserFocused;
-              if (!stillActive) {
-                stopCameraStream();
-              }
-            }, 500);
-          }
+        if (!camAwayTimer) {
+          camAwayTimer = setTimeout(() => {
+            camAwayTimer = null;
+            const stillActive = !document.hidden && (document.hasFocus() || popupOpen) && browserFocused;
+            if (!stillActive) {
+              stopCameraStream();
+            }
+          }, 500);
         }
       } else {
         if (camAwayTimer) { clearTimeout(camAwayTimer); camAwayTimer = null; }
@@ -860,6 +858,11 @@
   const away = () => {
     if (!alive()) return cleanup();
     setFlag("data-wps-away", !popupOpen && (document.hidden || !document.hasFocus()));
+    try {
+      if (ext?.runtime?.sendMessage) {
+        ext.runtime.sendMessage({ wpsCmd: "tabFocusReport", focused: !document.hidden && document.hasFocus() }).catch(() => {});
+      }
+    } catch {}
     evaluateCameraPower();
   };
   window.addEventListener("blur", away);

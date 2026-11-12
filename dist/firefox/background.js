@@ -48,14 +48,6 @@ const injectAllTabs = async () => {
   } catch {}
 };
 
-ext.runtime.onInstalled.addListener(() => {
-  notifyWaTabs();
-  injectAllTabs();
-  ext.storage.local.set({ browserFocused: true });
-});
-notifyWaTabs();
-ext.storage.local.set({ browserFocused: true });
-
 let isPopupOpen = false;
 ext.runtime.onConnect.addListener((port) => {
   if (port.name !== "wps-popup") return;
@@ -64,6 +56,7 @@ ext.runtime.onConnect.addListener((port) => {
   port.onDisconnect.addListener(() => {
     isPopupOpen = false;
     notifyWaTabs({ wpsCmd: "popup", open: false });
+    checkChromeFocus();
   });
 });
 
@@ -93,74 +86,108 @@ const setShare = async (tabId, on) => {
   await ext.storage.local.set({ shareTabs: [...set], sharing: set.size > 0 });
 };
 
-ext.runtime.onMessage.addListener((m, sender, sendResponse) => {
-  if (m && typeof m.share === "boolean" && sender.tab) setShare(sender.tab.id, m.share);
-  else if (m && m.wpsForward) {
-    notifyWaTabs(m.wpsForward).then((res) => sendResponse(res));
-    return true;
-  }
-});
-ext.tabs.onRemoved.addListener((id) => setShare(id, false));
-ext.tabs.onUpdated.addListener((id, info) => { if (info.status === "loading") setShare(id, false); });
-
-// Auto-sleep kamera saat keluar dari browser atau jendela di-minimize (500ms debounce)
+// Deteksi status fokus browser & minimize
 const winApi = ext?.windows ?? globalThis.chrome?.windows;
 const NO_WINDOW = winApi?.WINDOW_ID_NONE ?? -1;
-let focusDebounceTimer = null;
+let currentBrowserFocus = null;
 
 const setBrowserFocus = (active) => {
+  if (currentBrowserFocus === active) return;
+  currentBrowserFocus = active;
   ext.storage.local.set({ browserFocused: active });
   notifyWaTabs({ wpsCmd: "browserFocus", active }).catch(() => {});
 };
 
-const handleLostFocus = () => {
-  if (focusDebounceTimer) return;
-  focusDebounceTimer = setTimeout(() => {
-    focusDebounceTimer = null;
-    if (isPopupOpen) return;
-    setBrowserFocus(false);
-  }, 500);
-};
-
-const handleRegainedFocus = () => {
-  if (focusDebounceTimer) {
-    clearTimeout(focusDebounceTimer);
-    focusDebounceTimer = null;
+const checkChromeFocus = async () => {
+  if (!winApi) return;
+  if (isPopupOpen) {
+    setBrowserFocus(true);
+    return;
   }
-  setBrowserFocus(true);
+  try {
+    const wins = await winApi.getAll({ populate: false });
+    if (!wins || !wins.length) {
+      setBrowserFocus(false);
+      return;
+    }
+
+    // Jika ada jendela yang fokus dan tidak di-minimize, browser pasti fokus
+    const hasActive = wins.some((w) => w.state !== "minimized" && Boolean(w.focused));
+    if (hasActive) {
+      setBrowserFocus(true);
+      return;
+    }
+
+    // Jika semua jendela Chrome berstatus minimized, browser pasti tidak fokus
+    const allMinimized = wins.every((w) => w.state === "minimized");
+    if (allMinimized) {
+      setBrowserFocus(false);
+      return;
+    }
+
+    // Periksa window yang terakhir kali fokus
+    const lastWin = await winApi.getLastFocused({ populate: false }).catch(() => null);
+    if (!lastWin || lastWin.state === "minimized" || !lastWin.focused) {
+      setBrowserFocus(false);
+    } else {
+      setBrowserFocus(true);
+    }
+  } catch {
+    setBrowserFocus(false);
+  }
 };
 
 if (winApi) {
   winApi.onFocusChanged.addListener((windowId) => {
     if (windowId === NO_WINDOW) {
-      handleLostFocus();
+      setBrowserFocus(false);
     } else {
-      handleRegainedFocus();
+      checkChromeFocus();
     }
   });
 
   if (winApi.onBoundsChanged) {
     winApi.onBoundsChanged.addListener((win) => {
       if (win && win.state === "minimized") {
-        try {
-          winApi.getAll({ populate: false }, (wins) => {
-            const anyActive = (wins || []).some((w) => w.state !== "minimized" && w.focused);
-            if (!anyActive) {
-              handleLostFocus();
-            }
-          });
-        } catch {}
+        checkChromeFocus();
       }
     });
   }
 }
 
 ext.tabs.onActivated.addListener(() => {
-  handleRegainedFocus();
+  setBrowserFocus(true);
 });
+
+ext.runtime.onMessage.addListener((m, sender, sendResponse) => {
+  if (m && typeof m.share === "boolean" && sender.tab) {
+    setShare(sender.tab.id, m.share);
+  } else if (m && m.wpsForward) {
+    notifyWaTabs(m.wpsForward).then((res) => sendResponse(res));
+    return true;
+  } else if (m && m.wpsCmd === "tabFocusReport") {
+    if (m.focused) {
+      setBrowserFocus(true);
+    } else {
+      checkChromeFocus();
+    }
+  }
+});
+
+ext.tabs.onRemoved.addListener((id) => setShare(id, false));
+ext.tabs.onUpdated.addListener((id, info) => { if (info.status === "loading") setShare(id, false); });
 
 ext.storage.onChanged.addListener((changes) => {
   if (changes.faceScope && changes.faceScope.newValue === "all") {
     injectAllTabs();
   }
 });
+
+ext.runtime.onInstalled.addListener(() => {
+  notifyWaTabs();
+  injectAllTabs();
+  checkChromeFocus();
+});
+
+// Jalankan pengecekan fokus awal saat service worker pertama kali/kembali aktif
+checkChromeFocus();
