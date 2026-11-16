@@ -2,7 +2,7 @@
     "manifest_version":  3,
     "name":  "Privacy Shield for WA Web",
     "version":  "2.0.0",
-    "description":  "Blur pesan, preview, media, nama, dan foto di WhatsApp Web. 100% lokal, tanpa koneksi keluar.",
+    "description":  "Hide WhatsApp Web chats with on-device AI anti-peeking, all-tab shield, PIN \u0026 Windows Hello lock. 100% local, zero tracking.",
     "permissions":  [
                         "storage",
                         "scripting"
@@ -126,7 +126,7 @@
     "browser_specific_settings":  {
                                       "gecko":  {
                                                     "strict_min_version":  "128.0",
-                                                    "id":  "privacy-shield-wa@example.local",
+                                                    "id":  "privacy-shield@hielmymuthohar.github.io",
                                                     "data_collection_permissions":  {
                                                                                         "optional":  [
                                                                                                          "cameraData"

@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Privacy Shield for WA Web",
   "version": "2.0.0",
-  "description": "Blur pesan, preview, media, nama, dan foto di WhatsApp Web. 100% lokal, tanpa koneksi keluar.",
+  "description": "Hide WhatsApp Web chats with on-device AI anti-peeking, all-tab shield, PIN & Windows Hello lock. 100% local, zero tracking.",
   "permissions": ["storage", "scripting"],
   "host_permissions": ["https://web.whatsapp.com/*", "<all_urls>"],
   "icons": { "16": "icons/icon16.png", "48": "icons/icon48.png", "128": "icons/icon128.png" },

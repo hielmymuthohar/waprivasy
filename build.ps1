@@ -10,7 +10,7 @@ $m = Get-Content src\manifest.json -Raw | ConvertFrom-Json
 $m.background = @{ scripts = @("background.js") }
 $m.permissions = @($m.permissions | Where-Object { $_ -ne "offscreen" })
 $m | Add-Member browser_specific_settings @{ gecko = @{
-  id = "privacy-shield-wa@example.local"
+  id = "privacy-shield@hielmymuthohar.github.io"
   strict_min_version = "128.0"
   data_collection_permissions = @{ required = @("none"); optional = @("cameraData") }
 } }
