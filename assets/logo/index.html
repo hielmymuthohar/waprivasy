@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Logo Identity & Philosophy — Privacy Shield for WhatsApp Web</title>
+  <style>
+    :root {
+      --bg: #0b1120;
+      --bg-card: #131c31;
+      --bg-card-hover: #1e293b;
+      --border: #22304d;
+      --border-accent: #059669;
+      --primary: #10b981;
+      --primary-emerald: #059669;
+      --primary-dark: #064e3b;
+      --primary-light: #ecfdf5;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
+      padding: 36px 20px 80px;
+    }
+
+    .container {
+      max-width: 1040px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 44px;
+    }
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 14px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: var(--primary);
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+    }
+    .title {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.8px;
+      color: #ffffff;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      font-size: 15px;
+      color: var(--text-muted);
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    /* Philosophy Section */
+    .philosophy-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+    .phil-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px;
+      transition: transform .2s, border-color .2s;
+    }
+    .phil-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(16, 185, 129, 0.4);
+    }
+    .phil-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 14px;
+    }
+    .phil-icon svg { width: 22px; height: 22px; }
+    .phil-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+    .phil-desc {
+      font-size: 13.5px;
+      color: var(--text-muted);
+    }
+
+    /* Showcase Hero (Concept 1 - Primary Fix) */
+    .hero-card {
+      background: linear-gradient(145deg, #131c31 0%, #0d1527 100%);
+      border: 1.5px solid var(--border-accent);
+      border-radius: 20px;
+      padding: 36px;
+      margin-bottom: 44px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-card::before {
+      content: "";
+      position: absolute;
+      top: -120px;
+      right: -120px;
+      width: 320px;
+      height: 320px;
+      background: radial-gradient(circle, rgba(16, 185, 129, 0.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 36px;
+      align-items: center;
+    }
+    @media (max-width: 768px) {
+      .hero-layout { grid-template-columns: 1fr; text-align: center; }
+    }
+    .hero-logo-box {
+      width: 260px;
+      height: 260px;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      margin: 0 auto;
+    }
+    .hero-tag {
+      display: inline-block;
+      background: #059669;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 9999px;
+      margin-bottom: 12px;
+    }
+    .hero-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 10px;
+    }
+    .hero-desc {
+      font-size: 14px;
+      color: #cbd5e1;
+      margin-bottom: 20px;
+      line-height: 1.7;
+    }
+
+    /* Scaling previews */
+    .scale-box {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border);
+      padding: 14px 20px;
+      border-radius: 12px;
+      flex-wrap: wrap;
+    }
+    .scale-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .scale-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    /* Other Variations */
+    .sec-heading {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      margin: 40px 0 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .variant-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    .variant-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .variant-preview {
+      width: 140px;
+      height: 140px;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .variant-preview img, .variant-preview svg {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .variant-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+    .variant-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* Palette */
+    .palette-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    .color-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .color-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- Header -->
+    <div class="header">
+      <div class="badge-pill">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Identitas Brand &amp; Logo Resmi
+      </div>
+      <h1 class="title">Privacy Shield for WhatsApp Web</h1>
+      <p class="subtitle">Desain logo minimalis berakar filosofi perlindungan privasi layar, integritas data pribadi, dan arsitektur 100% Local-First.</p>
+    </div>
+
+    <!-- 3 Core Philosophies -->
+    <div class="philosophy-grid">
+      <div class="phil-card">
+        <div class="phil-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div class="phil-title">1. The Shield (Perlindungan Layar)</div>
+        <div class="phil-desc">Siluet perisai melambangkan tameng pertahanan terhadap tatapan orang lain (*anti-shoulder surfing*) saat pengguna membuka WhatsApp di kantor, kafe, atau ruang publik.</div>
+      </div>
+
+      <div class="phil-card">
+        <div class="phil-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        </div>
+        <div class="phil-title">2. Chat Bubble (Konteks WhatsApp)</div>
+        <div class="phil-desc">Bentuk gelembung pesan yang membulat dengan ekor percakapan halus mempertegas bahwa ekstensi ini dikhususkan untuk menjaga kenyamanan komunikasi pesan privat.</div>
+      </div>
+
+      <div class="phil-card">
+        <div class="phil-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1.5"/></svg>
+        </div>
+        <div class="phil-title">3. Local Core Vault (Data Local-First)</div>
+        <div class="phil-desc">Gembok terpadu dan titik inti di tengah melambangkan komitmen <strong>Local-First</strong>: semua pesan, PIN, model AI deteksi wajah, dan data pribadi diproses 100% di memori lokal tanpa pernah keluar ke cloud.</div>
+      </div>
+    </div>
+
+    <!-- HERO DISPLAY: CONCEPT 1 (RECOMMENDED FIX) -->
+    <div class="hero-card">
+      <div class="hero-layout">
+        <div class="hero-logo-box">
+          <!-- Embedding Concept 1 SVG -->
+          <svg viewBox="0 0 512 512" width="200" height="200">
+            <defs>
+              <linearGradient id="heroGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#10b981" />
+                <stop offset="50%" stop-color="#059669" />
+                <stop offset="100%" stop-color="#047857" />
+              </linearGradient>
+            </defs>
+            <path d="M256 36 C340 76 432 88 440 92 C444 180 436 320 256 476 C76 320 68 180 72 92 C80 88 172 76 256 36 Z" fill="url(#heroGrad)" />
+            <path d="M196 220 V178 C196 145 223 118 256 118 C289 118 316 145 316 178 V220" fill="none" stroke="#ffffff" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M160 210 H352 C374 210 392 228 392 250 V326 C392 348 374 366 352 366 H224 L168 406 V366 H160 C138 366 120 348 120 326 V250 C120 228 138 210 160 210 Z" fill="#ffffff" />
+            <circle cx="256" cy="288" r="38" fill="#ecfdf5" />
+            <circle cx="256" cy="284" r="18" fill="#059669" />
+            <path d="M251 286 L261 286 L264 308 L248 308 Z" fill="#059669" />
+          </svg>
+        </div>
+
+        <div>
+          <span class="hero-tag">Pilihan Utama (Fix Logo)</span>
+          <h2 class="hero-title">The Local Sentinel Shield</h2>
+          <p class="hero-desc">
+            Kombinasi perisai pelindung bergradasi Emerald WhatsApp dengan siluet gembok gelembung pesan dan titik inti data lokal (Local Vault Core). Sangat bersih, proporsional, dan terbaca dengan sempurna pada segala skala resolusi.
+          </p>
+
+          <div class="scale-box">
+            <div class="scale-item">
+              <svg viewBox="0 0 512 512" width="16" height="16">
+                <path d="M256 36 C340 76 432 88 440 92 C444 180 436 320 256 476 C76 320 68 180 72 92 C80 88 172 76 256 36 Z" fill="#10b981" />
+                <path d="M160 210 H352 V366 H224 L168 406 V366 H160 Z" fill="#ffffff" />
+              </svg>
+              <span class="scale-label">16px (Toolbar)</span>
+            </div>
+
+            <div class="scale-item">
+              <svg viewBox="0 0 512 512" width="32" height="32">
+                <path d="M256 36 C340 76 432 88 440 92 C444 180 436 320 256 476 C76 320 68 180 72 92 C80 88 172 76 256 36 Z" fill="#10b981" />
+                <path d="M196 220 V178 C196 145 223 118 256 118 C289 118 316 145 316 178 V220" fill="none" stroke="#fff" stroke-width="26" stroke-linecap="round" />
+                <path d="M160 210 H352 V366 H224 L168 406 V366 H160 Z" fill="#ffffff" />
+                <circle cx="256" cy="288" r="28" fill="#059669" />
+              </svg>
+              <span class="scale-label">32px (Menu)</span>
+            </div>
+
+            <div class="scale-item">
+              <svg viewBox="0 0 512 512" width="48" height="48">
+                <path d="M256 36 C340 76 432 88 440 92 C444 180 436 320 256 476 C76 320 68 180 72 92 C80 88 172 76 256 36 Z" fill="#10b981" />
+                <path d="M196 220 V178 C196 145 223 118 256 118 C289 118 316 145 316 178 V220" fill="none" stroke="#fff" stroke-width="26" stroke-linecap="round" />
+                <path d="M160 210 H352 V366 H224 L168 406 V366 H160 Z" fill="#ffffff" />
+                <circle cx="256" cy="288" r="32" fill="#059669" />
+              </svg>
+              <span class="scale-label">48px (Manager)</span>
+            </div>
+
+            <div class="scale-item">
+              <svg viewBox="0 0 512 512" width="64" height="64">
+                <path d="M256 36 C340 76 432 88 440 92 C444 180 436 320 256 476 C76 320 68 180 72 92 C80 88 172 76 256 36 Z" fill="#10b981" />
+                <path d="M196 220 V178 C196 145 223 118 256 118 C289 118 316 145 316 178 V220" fill="none" stroke="#fff" stroke-width="26" stroke-linecap="round" />
+                <path d="M160 210 H352 V366 H224 L168 406 V366 H160 Z" fill="#ffffff" />
+                <circle cx="256" cy="288" r="38" fill="#ecfdf5" />
+                <circle cx="256" cy="284" r="18" fill="#059669" />
+              </svg>
+              <span class="scale-label">128px (Store)</span>
+            </div>
+          </div>
+
+          <!-- Color Tokens -->
+          <div class="palette-row">
+            <div class="color-pill"><div class="color-dot" style="background:#10b981"></div>#10B981 Emerald</div>
+            <div class="color-pill"><div class="color-dot" style="background:#059669"></div>#059669 Forest</div>
+            <div class="color-pill"><div class="color-dot" style="background:#0f172a"></div>#0F172A Slate</div>
+            <div class="color-pill"><div class="color-dot" style="background:#ffffff"></div>#FFFFFF Pure</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Variant Gallery -->
+    <h3 class="sec-heading">Pilihan Variasi Konsep Logo Lainnya</h3>
+    <div class="variant-grid">
+      <!-- Concept 2 -->
+      <div class="variant-card">
+        <div class="variant-preview">
+          <img src="logo-concept-2.svg" alt="Concept 2">
+        </div>
+        <div class="variant-name">Konsep 2: The Privacy Enclave</div>
+        <div class="variant-desc">Dual-tone shield dengan cincin keamanan sirkular tertutup (closed loop) yang mengisolasi data di memori lokal.</div>
+      </div>
+
+      <!-- Concept 3 -->
+      <div class="variant-card">
+        <div class="variant-preview">
+          <img src="logo-concept-3.svg" alt="Concept 3">
+        </div>
+        <div class="variant-name">Konsep 3: The Dark App Tile</div>
+        <div class="variant-desc">Badge squircle modern bernuansa dark slate dengan siluet perisai emerald dan gembok data minimalis.</div>
+      </div>
+
+      <!-- AI Render 1 -->
+      <div class="variant-card">
+        <div class="variant-preview">
+          <img src="concept-ai-emblem.jpg" alt="AI Emblem">
+        </div>
+        <div class="variant-name">Konsep 4: Standalone 3D Emblem</div>
+        <div class="variant-desc">Render emblem 3D modern dengan kurva glossy dan ornamen gembok terpadu untuk materi promosi / banner.</div>
+      </div>
+
+      <!-- AI Render 2 -->
+      <div class="variant-card">
+        <div class="variant-preview">
+          <img src="concept-ai-tile.jpg" alt="AI Tile">
+        </div>
+        <div class="variant-name">Konsep 5: Squircle App Badge</div>
+        <div class="variant-desc">Render tile aplikasi berbentuk rounded squircle premium dengan perpaduan perisai dan gelembung pesan.</div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

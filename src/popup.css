@@ -125,15 +125,12 @@ body {
   gap: 8px;
 }
 .brand-logo {
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-sm);
-  background: var(--primary-light);
-  color: var(--primary);
-  border: 1px solid var(--primary-border);
+  width: 26px;
+  height: 26px;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 .brand-title {
   font-size: 14px;

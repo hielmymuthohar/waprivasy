@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="tileGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#1e293b" />
+    </linearGradient>
+
+    <linearGradient id="emeraldShield" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399" />
+      <stop offset="50%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+
+    <filter id="tileShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <!-- Squircle Base Frame -->
+  <rect x="32" y="32" width="448" height="448" rx="112" fill="url(#tileGrad)" filter="url(#tileShadow)" />
+
+  <!-- Shield Outline with Emerald Gradient -->
+  <path d="M256 90
+           C328 124 394 134 402 138
+           C406 218 398 334 256 422
+           C114 334 106 218 110 138
+           C118 134 184 124 256 90 Z"
+        fill="url(#emeraldShield)" />
+
+  <!-- Chat Bubble Silhouette in Negative Space (Perlindungan WhatsApp) -->
+  <path d="M190 180
+           H322
+           C340 180 354 194 354 212
+           V274
+           C354 292 340 306 322 306
+           H246
+           L200 338
+           V306
+           H190
+           C172 306 158 292 158 274
+           V212
+           C158 194 172 180 190 180 Z"
+        fill="#0f172a" />
+
+  <!-- The Local-First Secure Core Lock (Gembok Data Lokal) -->
+  <path d="M236 232
+           V218
+           C236 207 245 198 256 198
+           C267 198 276 207 276 218
+           V232"
+        fill="none"
+        stroke="#34d399"
+        stroke-width="8"
+        stroke-linecap="round" />
+
+  <rect x="230" y="232" width="52" height="42" rx="9" fill="#34d399" />
+  <circle cx="256" cy="248" r="5" fill="#0f172a" />
+  <path d="M254 248 L258 248 L260 262 L252 262 Z" fill="#0f172a" />
+</svg>

@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Left Wing Gradient -->
+    <linearGradient id="shieldLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399" />
+      <stop offset="60%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+
+    <!-- Right Wing Gradient (Deeper for dimensional contrast) -->
+    <linearGradient id="shieldRight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="60%" stop-color="#059669" />
+      <stop offset="100%" stop-color="#047857" />
+    </linearGradient>
+
+    <filter id="enclaveShadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#064e3b" flood-opacity="0.3" />
+    </filter>
+  </defs>
+
+  <!-- Left Half Shield (Perlindungan Layar Visual & Interaksi) -->
+  <path d="M256 36
+           C172 76 80 88 72 92
+           C68 180 76 320 256 476
+           V36 Z"
+        fill="url(#shieldLeft)"
+        filter="url(#enclaveShadow)" />
+
+  <!-- Right Half Shield (Perlindungan Data Lokal & Deteksi AI) -->
+  <path d="M256 36
+           C340 76 432 88 440 92
+           C444 180 436 320 256 476
+           V36 Z"
+        fill="url(#shieldRight)"
+        filter="url(#enclaveShadow)" />
+
+  <!-- Central Enclave: Chat Bubble Form (Pesan WhatsApp) -->
+  <path d="M256 140
+           C185 140 128 195 128 262
+           C128 286 135 308 148 327
+           L138 376
+           L188 362
+           C208 376 231 384 256 384
+           C327 384 384 329 384 262
+           C384 195 327 140 256 140 Z"
+        fill="#ffffff" />
+
+  <!-- Inner Closed Security Loop (Data Tetap di Perangkat / Local-First Perimeter) -->
+  <circle cx="256" cy="258" r="54" fill="none" stroke="#059669" stroke-width="14" stroke-dasharray="16 10" />
+
+  <!-- The Local Anchor Core (Inti Data Pribadi yang Terkunci Aman) -->
+  <circle cx="256" cy="258" r="28" fill="#047857" />
+  <circle cx="256" cy="258" r="10" fill="#ffffff" />
+</svg>
